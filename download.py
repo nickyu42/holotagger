@@ -4,7 +4,7 @@ from typing import List
 
 import youtube_dl
 
-logger = logging.Logger('dl')
+logger = logging.getLogger('dl')
 
 
 def init_ydl_options() -> dict:
