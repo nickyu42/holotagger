@@ -1,6 +1,5 @@
 import logging
 import sys
-import urllib.parse as urlparse
 
 from fastapi import FastAPI
 
