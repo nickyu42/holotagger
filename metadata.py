@@ -22,14 +22,15 @@ class SongMetadata:
     title: str
     artists: List[str]
     album: str
-    original_artists = List[str]
+    original_artists: List[str]
+    tagger: Optional[str]
 
     def serialize(self):
         return json.dumps(self, default=pydantic_encoder)
 
 
 @dataclass
-class Artist:
+class ArtistMetadata:
     name: str
     fuzzy_names: List[str]
     yt_id: str
@@ -74,13 +75,12 @@ class YoutubeAPI:
         return [i['snippet'] for i in response['items']]
 
 
-def guess_artist(song_title: str, choices: Dict[str, Artist], guess_threshold=80) -> Set[str]:
+def guess_artist(song_title: str, choices: Dict[str, ArtistMetadata], guess_threshold=80) -> Set[str]:
     bests = process.extractBests(song_title, tuple(choices.keys()), score_cutoff=guess_threshold)
-    print(bests)
     return set(choices[t[0]].name for t in bests)
 
 
-def get_metadata(video_id: str, choices: dict, artists: List[Artist]) -> SongMetadata:
+def get_metadata(video_id: str, choices: dict, artists: List[ArtistMetadata]) -> SongMetadata:
     response = YoutubeAPI.video_info([video_id])[0]
 
     title = response['title']
@@ -113,7 +113,7 @@ def add_metadata(
     audio.save()
 
 
-def load_artists(artists_file: pathlib.Path) -> (List[Artist], Dict[str, Artist]):
+def load_artists(artists_file: pathlib.Path) -> (List[ArtistMetadata], Dict[str, ArtistMetadata]):
     with artists_file.open('r', encoding='utf8') as f:
         groups = yaml.load(f, Loader=yaml.FullLoader)
 
@@ -125,7 +125,7 @@ def load_artists(artists_file: pathlib.Path) -> (List[Artist], Dict[str, Artist]
             name = next(iter(artist))
             info = artist[name]
 
-            created_artist = Artist(
+            created_artist = ArtistMetadata(
                 name=name,
                 fuzzy_names=info['names'],
                 yt_id=info['yt'],
