@@ -14,12 +14,6 @@ from download import init_download_workers
 from metadata import get_metadata, YoutubeAPI, load_artists, SongMetadata
 from settings import ARTISTS
 
-logger = logging.getLogger(__name__)
-
-handler = logging.StreamHandler(sys.stdout)
-handler.setLevel(logging.DEBUG)
-logger.addHandler(handler)
-
 
 class MetadataRequest(BaseModel):
     video_id: str
@@ -31,6 +25,12 @@ class DownloadRequest(BaseModel):
 
 
 def create_app():
+    logger = logging.getLogger(__name__)
+
+    handler = logging.StreamHandler(sys.stdout)
+    handler.setLevel(logging.DEBUG)
+    logger.addHandler(handler)
+
     download_workers: List[multiprocessing.Process] = []
     artists, artists_lookup = load_artists(ARTISTS)
     download_queue = multiprocessing.Queue()
@@ -41,6 +41,14 @@ def create_app():
     status_cache = cachetools.TTLCache(10_000, 30 * 60)
 
     app = FastAPI()
+
+    app.add_middleware(
+        CORSMiddleware,
+        allow_credentials=True,
+        allow_origins=['*'],
+        allow_methods=["*"],
+        allow_headers=["*"],
+    )
 
     @app.on_event('startup')
     def startup():
@@ -54,14 +62,6 @@ def create_app():
             w.close()
 
         db.close()
-
-    app.add_middleware(
-        CORSMiddleware,
-        allow_credentials=True,
-        allow_origins=['*'],
-        allow_methods=["*"],
-        allow_headers=["*"],
-    )
 
     @app.get('/')
     async def root():

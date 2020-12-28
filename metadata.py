@@ -2,19 +2,19 @@ import json
 import logging
 import os
 import pathlib
-from typing import List, Optional, Dict, Set
+from typing import List, Optional, Dict, Set, Union
+from urllib import request
 
+import eyed3
+import ffmpeg
 import googleapiclient.discovery
 import googleapiclient.errors
 import yaml
 from fuzzywuzzy import process
-from mutagen.easyid3 import EasyID3
-from mutagen.id3 import APIC, ID3
-from mutagen.mp3 import MP3
 from pydantic.dataclasses import dataclass
 from pydantic.json import pydantic_encoder
 
-logger = logging.getLogger('dl')
+logger = logging.getLogger(__name__)
 
 
 @dataclass
@@ -98,19 +98,57 @@ def get_metadata(video_id: str, choices: dict, artists: List[ArtistMetadata]) ->
 def add_metadata(
         song_file: pathlib.Path,
         meta: SongMetadata,
-        thumbnail: pathlib.Path,
+        thumbnail: Union[pathlib.Path, str],
 ):
-    audio = MP3(song_file.resolve(), ID3=EasyID3)
+    """
+    Add ID3 metadata to mp3 file.
 
-    audio['title'] = meta.title
-    audio['artist'] = ','.join(meta.artists)
-    audio['album'] = meta.album
-    audio.save()
+    :param song_file: path to the mp3 file
+    :param meta: the metadata to add
+    :param thumbnail: the album cover image, if a path is given, it will use that file.
+        A string represents a url and the thumbnail will be downloaded from there, if a url is given,
+        it must be a jpeg
+    """
+    audio = eyed3.load(song_file.resolve())
 
-    audio = MP3(song_file.resolve(), ID3=ID3)
-    with open(str(thumbnail), 'rb') as f:
-        audio.tags.add(APIC(mime='image/jpeg', type=3, desc='cover', data=f.read()))
-    audio.save()
+    audio.tag.title = meta.title
+    audio.tag.artist = ','.join(meta.artists)
+    audio.tag.album = meta.album
+    if isinstance(thumbnail, pathlib.Path):
+        with thumbnail.open('rb') as f:
+            audio.tag.images.set(3, f.read(), f'image/{thumbnail.suffix}', 'Album Art')
+    else:
+        data = request.urlopen(thumbnail).read()
+        # TODO: assumption of image mime type, get it from request
+        audio.tag.images.set(3, data, 'image/jpeg', 'Album Art')
+    audio.tag.save()
+
+
+def force_mp3(song: pathlib.Path) -> pathlib.Path:
+    """
+    Encode media file into mp3 using ffmpeg.
+
+    :param song: path to the file to encode
+    :return: the changed path if the file was modified, otherwise the same path
+    """
+    audio = eyed3.load(song.resolve())
+
+    # If the youtube native audio format can't be converted to mp3
+    # without loss of quality by re-encoding, it seems youtube-dl
+    # will choose not to, force re-encode if necessary
+    if audio is None:
+        logging.info(f'Force encode of {song}')
+
+        song = song.with_suffix('.mp3')
+        # TODO: improve encoding pipeline
+        (ffmpeg
+         .input(song.resolve())
+         # -q:a 0 => variable bit rate
+         .output(song, **{'q:a': 0})
+         .run())
+        return song
+
+    return song
 
 
 def load_artists(artists_file: pathlib.Path) -> (List[ArtistMetadata], Dict[str, ArtistMetadata]):
@@ -137,7 +175,3 @@ def load_artists(artists_file: pathlib.Path) -> (List[ArtistMetadata], Dict[str,
                 artist_lookup[n] = created_artist
 
     return artists, artist_lookup
-
-
-def get_thumbnail(artist: Optional[str] = None):
-    pass
