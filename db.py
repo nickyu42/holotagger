@@ -5,6 +5,7 @@ from sqlalchemy import create_engine, Column, Integer, Text, Table, ForeignKey
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship, Session
 
+import settings
 from metadata import SongMetadata
 
 Base = declarative_base()
@@ -115,3 +116,6 @@ def get_or_create_artists(session: Session, artist_names: List[str]) -> List[Art
             artists.append(row)
 
     return artists
+
+
+db = init(settings.DB)

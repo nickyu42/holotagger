@@ -1,24 +1,20 @@
 import logging
-import queue
+import multiprocessing
 import sys
 import uuid
-from enum import Enum
-from pathlib import Path
-from uuid import UUID
+from typing import List
 
 import cachetools
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
-from db import init
+from db import db
+from download import init_download_workers
 from metadata import get_metadata, YoutubeAPI, load_artists, SongMetadata
+from settings import ARTISTS
 
-SONGS_STORAGE = 'data/songs'
-DB_NAME = 'data/db.sqlite'
-ARTISTS = 'data/artists.yaml'
-
-logger = logging.getLogger('dl')
+logger = logging.getLogger(__name__)
 
 handler = logging.StreamHandler(sys.stdout)
 handler.setLevel(logging.DEBUG)
@@ -35,12 +31,9 @@ class DownloadRequest(BaseModel):
 
 
 def create_app():
-    YoutubeAPI.init()
-
-    artists, artists_lookup = load_artists(Path(ARTISTS))
-    download_queue = queue.Queue()
-
-    db_engine = init(DB_NAME)
+    download_workers: List[multiprocessing.Process] = []
+    artists, artists_lookup = load_artists(ARTISTS)
+    download_queue = multiprocessing.Queue()
 
     # key value store where the key is the uuid of the request
     # and the value is the 0 to 100 of the download progress
@@ -48,6 +41,19 @@ def create_app():
     status_cache = cachetools.TTLCache(10_000, 30 * 60)
 
     app = FastAPI()
+
+    @app.on_event('startup')
+    def startup():
+        YoutubeAPI.init()
+        download_workers.extend(init_download_workers(download_queue, status_cache))
+
+    @app.on_event('shutdown')
+    def shutdown():
+        download_queue.close()
+        for w in download_workers:
+            w.close()
+
+        db.close()
 
     app.add_middleware(
         CORSMiddleware,
@@ -68,9 +74,7 @@ def create_app():
 
     @app.post('/download')
     async def download(req: DownloadRequest):
-        # # XXX: Maybe insecure, check if URL is valid youtube url
-        # url = f'youtube.com/watch?v={req.video_id}'
-        uuid_ = uuid.UUID()
+        uuid_ = uuid.uuid4().hex
         status_cache[uuid_] = 0
         download_queue.put((req, uuid_))
 
