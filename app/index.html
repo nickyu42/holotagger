@@ -79,12 +79,12 @@
             <input class="form-control" id="album-tag" placeholder="Album" aria-label="Album">
         </div>
 
-        <div class="mb-3">
-            <input class="form-control" id="genre-tag" placeholder="Optional: Genre" aria-label="Genre">
-        </div>
+<!--        <div class="mb-3">-->
+<!--            <input class="form-control" id="genre-tag" placeholder="Optional: Genre" aria-label="Genre">-->
+<!--        </div>-->
 
         <div class="mb-3">
-            <input class="form-control" id="name-tag" placeholder="Optional: Tagger" aria-label="Name"
+            <input class="form-control" id="tagger-tag" placeholder="Optional: Tagger" aria-label="Name"
                    aria-describedby="tagger-help">
             <div id="tagger-help" class="form-text">
                 Who tagged this song, won't be included in the song's metadata
@@ -104,16 +104,16 @@
 
         <input type="image" alt="">
 
-        <label for="youtube-link" hidden></label><input id="youtube-link" hidden value="">
+        <label for="youtube-id" hidden></label><input id="youtube-id" hidden value="">
 
-        <button type="submit" class="btn btn-primary" disabled>Done</button>
+        <button type="submit" class="btn btn-primary">Done</button>
     </form>
 
     <br>
 
     <div class="progress">
         <div class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" aria-valuenow="0"
-             aria-valuemin="0" aria-valuemax="100"></div>
+             aria-valuemin="0" aria-valuemax="100" id="download-progress-bar"></div>
     </div>
 
     <br>

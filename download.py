@@ -3,8 +3,8 @@ import multiprocessing
 from pathlib import Path
 from typing import List, Any, Optional
 
+import redis as redis
 import youtube_dl
-from cachetools import TTLCache
 from sqlalchemy.orm import Session
 
 import settings
@@ -12,6 +12,13 @@ from db import add_song, db
 from metadata import SongMetadata, add_metadata, force_mp3
 
 logger = logging.getLogger(__name__)
+
+
+class Status:
+    WAITING = 'waiting'
+    DOWNLOADING = 'downloading'
+    DONE = 'done'
+    ERROR = 'error'
 
 
 def init_ydl_options(output_dir: Path, song_title: str, hooks: list) -> dict:
@@ -75,8 +82,9 @@ def download_and_tag(storage_dir: Path, url: str, meta: SongMetadata, db_engine:
     s.close()
 
 
-def download_worker(q: multiprocessing.Queue, cache: TTLCache, storage: Path):
+def download_worker(q: multiprocessing.Queue, storage: Path):
     db.dispose()
+    r = redis.Redis(host=settings.REDIS_HOST, port=settings.REDIS_PORT, decode_responses=True)
 
     while True:
         req, uuid = q.get()
@@ -88,21 +96,26 @@ def download_worker(q: multiprocessing.Queue, cache: TTLCache, storage: Path):
         # function that updates the status of the download in the cache
         def progress_hook(d: dict):
             if d['status'] == 'finished':
-                cache[uuid] = 100
+                r.set(uuid, Status.DONE)
+                r.expire(uuid, settings.DOWNLOAD_REQUEST_TTL)
             elif d['status'] == 'downloading' and 'downloaded_bytes' in d and 'total_bytes' in d:
-                cache[uuid] = 100 * d['downloaded_bytes'] / d['total_bytes']
+                if r.get(uuid) != Status.DOWNLOADING:
+                    r.set(uuid, Status.DOWNLOADING)
+
+                r.publish(uuid, 100 * d['downloaded_bytes'] / d['total_bytes'])
             elif d['status'] == 'error':
-                cache[uuid] = -1
+                r.set(uuid, Status.DONE)
+                r.expire(uuid, settings.DOWNLOAD_REQUEST_TTL)
 
-        download_and_tag(storage, url, req.meta, db, [progress_hook])
+        download_and_tag(storage, url, req, db, [progress_hook])
 
 
-def init_download_workers(q: multiprocessing.Queue, cache: TTLCache, num_workers: int = 3) -> list:
+def init_download_workers(q: multiprocessing.Queue, num_workers: int = 3) -> list:
     workers = []
 
     for i in range(num_workers):
         logger.info(f'Started worker {i}')
-        p = multiprocessing.Process(target=download_worker, args=(q, cache, settings.SONGS_STORAGE))
+        p = multiprocessing.Process(target=download_worker, args=(q, settings.SONGS_STORAGE))
         p.start()
         workers.append(p)
 

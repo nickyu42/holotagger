@@ -1,4 +1,3 @@
-import json
 import logging
 import os
 import pathlib
@@ -11,32 +10,24 @@ import googleapiclient.discovery
 import googleapiclient.errors
 import yaml
 from fuzzywuzzy import process
-from pydantic.dataclasses import dataclass
-from pydantic.json import pydantic_encoder
+from pydantic import BaseModel
 
 logger = logging.getLogger(__name__)
 
 
-@dataclass
-class SongMetadata:
+class SongMetadata(BaseModel):
     title: str
     artists: List[str]
     album: str
     original_artists: List[str]
+    video_id: str
     tagger: Optional[str]
 
-    def serialize(self):
-        return json.dumps(self, default=pydantic_encoder)
 
-
-@dataclass
-class ArtistMetadata:
+class ArtistMetadata(BaseModel):
     name: str
     fuzzy_names: List[str]
     yt_id: str
-
-    def serialize(self):
-        return json.dumps(self, default=pydantic_encoder)
 
 
 class YoutubeAPI:
@@ -92,7 +83,14 @@ def get_metadata(video_id: str, choices: dict, artists: List[ArtistMetadata]) ->
 
     guessed_artists |= guess_artist(title, choices)
 
-    return SongMetadata(title=title, artists=list(guessed_artists), album='Vtuber Covers')
+    return SongMetadata(
+        title=title,
+        artists=list(guessed_artists),
+        album='Vtuber Covers',
+        original_artists=[],
+        tagger=None,
+        video_id=video_id,
+    )
 
 
 def add_metadata(

@@ -10,3 +10,4 @@ eyeD3==0.9.5
 google-api-python-client==1.12.8
 youtube-dl==2020.12.22
 fastapi==0.63.0
+redis==3.5.3
