@@ -1,5 +1,6 @@
 from pathlib import Path
-from typing import Any, List
+from typing import Any, List, Optional
+from dataclasses import asdict, dataclass
 
 from sqlalchemy import create_engine, Column, Integer, Text, Table, ForeignKey
 from sqlalchemy.ext.declarative import declarative_base
@@ -11,6 +12,7 @@ from metadata import SongMetadata
 Base = declarative_base()
 
 
+@dataclass
 class Song(Base):
     __tablename__ = 'song'
 
@@ -34,8 +36,9 @@ class Song(Base):
     # Abstract relationship fields
     artists = relationship('Artist', secondary=artist_association, backref='songs')
     original_artists = relationship('Artist', secondary=artist_association, backref='original_songs')
+        
 
-
+@dataclass
 class Artist(Base):
     __tablename__ = 'artist'
 
@@ -44,6 +47,7 @@ class Artist(Base):
     yt_id = Column(Text, nullable=True)
 
 
+@dataclass
 class Album(Base):
     __tablename__ = 'album'
 
@@ -52,6 +56,7 @@ class Album(Base):
     songs = relationship('Song', backref='album')
 
 
+@dataclass
 class Tagger(Base):
     __tablename__ = 'tagger'
 
@@ -116,6 +121,15 @@ def get_or_create_artists(session: Session, artist_names: List[str]) -> List[Art
             artists.append(row)
 
     return artists
+
+
+def get_songs(session: Session, limit: Optional[int] = None) -> List[dict]:
+    q = session.query(Song).order_by(~Song.id)
+
+    if limit is not None:
+        q = q.limit(limit)
+
+    return [asdict(s) for s in q.all()]
 
 
 db = init(settings.DB)
