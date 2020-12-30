@@ -3,16 +3,19 @@ import logging
 import multiprocessing
 import sys
 import uuid
-from typing import List
+from concurrent.futures.process import ProcessPoolExecutor
+from typing import List, Optional
+from http import HTTPStatus
 
 import cachetools
 import redis
-from fastapi import FastAPI, WebSocket
+from fastapi import FastAPI, WebSocket, BackgroundTasks
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
+from sqlalchemy.orm import Session
 
-from db import db
-from download import init_download_workers, Status
+from db import db, get_songs, Song
+from download import Status, download_worker
 from metadata import get_metadata, YoutubeAPI, load_artists, SongMetadata
 from settings import ARTISTS, REDIS_PORT, REDIS_HOST, DOWNLOAD_REQUEST_TTL
 
@@ -21,8 +24,12 @@ class MetadataRequest(BaseModel):
     video_id: str
 
 
-class DownloadResponse(BaseModel):
-    request_id: str
+class DownloadJob(BaseModel):
+    request_id: uuid.UUID
+    status: Status
+
+    class Config:  
+        use_enum_values = True
 
 
 def create_app():
@@ -34,11 +41,9 @@ def create_app():
     logger.addHandler(handler)
 
     # Setup download necessities
-    download_pool = None
     artists, artists_lookup = load_artists(ARTISTS)
-    download_queue = multiprocessing.Queue()
-
-    r = redis.Redis(host=REDIS_HOST, port=REDIS_PORT, decode_responses=True)
+    jobs: cachetools.TTLCache[uuid.UUID, DownloadJob] = \
+        cachetools.TTLCache(1_000, 10 * 60)
 
     app = FastAPI()
 
@@ -50,17 +55,20 @@ def create_app():
         allow_headers=["*"],
     )
 
+    async def start_download(uid: uuid.UUID, *args) -> None:
+        loop = asyncio.get_event_loop()
+        jobs[uid].status = Status.DOWNLOADING
+        await loop.run_in_executor(app.state.executor, download_worker, *args)
+        jobs[uid].status = Status.DONE
+
     @app.on_event('startup')
     def startup():
-        nonlocal download_pool
         YoutubeAPI.init()
-        download_pool = init_download_workers(download_queue)
+        app.state.executor = ProcessPoolExecutor()
 
     @app.on_event('shutdown')
-    def shutdown():
-        download_queue.close()
-        download_pool.close()
-        download_pool.join()
+    def shutdown_event():
+        app.state.executor.shutdown()
         db.close()
 
     @app.get('/')
@@ -73,42 +81,34 @@ def create_app():
         meta = get_metadata(req.video_id, artists_lookup, artists)
         return meta.dict()
 
-    @app.post('/download', response_model=DownloadResponse)
-    def download(req: SongMetadata):
+    @app.get('/songs', response_model=List[Song.Model])
+    def songs(limit: Optional[int] = None):
+        s = Session(db)
+        try:
+            return [s.to_model() for s in get_songs(s, limit=limit)]
+        except:  # noqa
+            s.rollback()
+            raise
+        finally:
+            s.close()
+
+    @app.post('/download', response_model=DownloadJob, status_code=HTTPStatus.ACCEPTED)
+    def download(req: SongMetadata, background_tasks: BackgroundTasks):
         """
         Start download of song with given metadata in the background.
-        The status of the download can be tracked using a WebSocket on /status/<REQUEST_ID>. 
         """
-        uuid_ = uuid.uuid4().hex
-        r.set(uuid_, Status.WAITING)
-        r.expire(uuid_, DOWNLOAD_REQUEST_TTL)
-        download_queue.put((req, uuid_))
+        uid = uuid.uuid4()
+        jobs[uid] = DownloadJob(request_id=uid, status=Status.WAITING)
+        background_tasks.add_task(start_download, uid, req)
 
-        return {'request_id': uuid_}
+        return jobs[uid].dict()
 
-    @app.websocket('/status/{request_id}')
-    async def download_status(websocket: WebSocket, request_id: str):
-        await websocket.accept()
-
-        status = r.get(request_id)
-        if status is None:
-            await websocket.close()
+    @app.get('status/{uid}', response_model=DownloadJob)
+    async def status(uid: uuid.UUID):
+        """Get status on download job"""
+        if uid not in jobs:
             return
 
-        while status == Status.WAITING:
-            await websocket.send_json({'status': Status.WAITING})
-            await asyncio.sleep(0.1)
-            status = r.get(request_id)
-
-        p = r.pubsub()
-        p.subscribe(request_id)
-
-        while status == Status.DOWNLOADING:
-            percentage = p.get_message(timeout=1.0)['data']
-            await websocket.send_json({'status': Status.DOWNLOADING, 'percentage': percentage})
-            status = r.get(request_id)
-
-        await websocket.send_json({'status': str(status)})
-        await websocket.close()
+        return jobs[uid].dict()
 
     return app

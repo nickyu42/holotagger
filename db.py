@@ -1,10 +1,11 @@
 from pathlib import Path
-from typing import Any, List, Optional
-from dataclasses import asdict, dataclass
+from typing import Any, List, Optional, Generator
+from dataclasses import asdict
 
 from sqlalchemy import create_engine, Column, Integer, Text, Table, ForeignKey
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship, Session
+from pydantic import BaseModel
 
 import settings
 from metadata import SongMetadata
@@ -12,12 +13,18 @@ from metadata import SongMetadata
 Base = declarative_base()
 
 
-@dataclass
 class Song(Base):
     __tablename__ = 'song'
 
     artist_association = Table(
         'song_artist_table',
+        Base.metadata,
+        Column('song_id', Integer, ForeignKey('song.id')),
+        Column('artist_id', Integer, ForeignKey('artist.id')),
+    )
+
+    original_artist_association = Table(
+        'song_origina_artist_table',
         Base.metadata,
         Column('song_id', Integer, ForeignKey('song.id')),
         Column('artist_id', Integer, ForeignKey('artist.id')),
@@ -35,10 +42,27 @@ class Song(Base):
 
     # Abstract relationship fields
     artists = relationship('Artist', secondary=artist_association, backref='songs')
-    original_artists = relationship('Artist', secondary=artist_association, backref='original_songs')
-        
+    original_artists = relationship('Artist', secondary=original_artist_association, backref='original_songs')
 
-@dataclass
+    class Model(BaseModel):
+        id: int
+        title: str
+        tagger: str
+        album: str
+        artists: List[str]
+        original_artists: List[str]
+
+    def to_model(self) -> Model:
+        return Song.Model(
+            id=self.id,
+            title=self.title,
+            tagger=self.tagger.name,
+            album=self.album.name,
+            artists=[a.name for a in self.artists],
+            original_artists=[a.name for a in self.original_artists],
+        )
+
+
 class Artist(Base):
     __tablename__ = 'artist'
 
@@ -47,7 +71,6 @@ class Artist(Base):
     yt_id = Column(Text, nullable=True)
 
 
-@dataclass
 class Album(Base):
     __tablename__ = 'album'
 
@@ -56,7 +79,6 @@ class Album(Base):
     songs = relationship('Song', backref='album')
 
 
-@dataclass
 class Tagger(Base):
     __tablename__ = 'tagger'
 
@@ -100,7 +122,7 @@ def add_song(s: Session, meta: SongMetadata, path: Path):
         song.album = album
 
     # Create tagger if not exists
-    if meta.tagger is not None:
+    if meta.tagger is not None and meta.tagger != '':
         tagger = s.query(Tagger).filter(Tagger.name == meta.tagger).scalar()
         if tagger is None:
             song.tagger = Tagger(name=meta.tagger)
@@ -123,13 +145,13 @@ def get_or_create_artists(session: Session, artist_names: List[str]) -> List[Art
     return artists
 
 
-def get_songs(session: Session, limit: Optional[int] = None) -> List[dict]:
+def get_songs(session: Session, limit: Optional[int] = None) -> Generator[Song.Model, None, None]:
     q = session.query(Song).order_by(~Song.id)
 
     if limit is not None:
         q = q.limit(limit)
 
-    return [asdict(s) for s in q.all()]
+    return q.all()
 
 
 db = init(settings.DB)

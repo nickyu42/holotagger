@@ -8,38 +8,38 @@ function populateForm(json) {
 }
 
 function track_status(request_id) {
-    const ws = new WebSocket(`ws://localhost/status/${request_id}`);
+    // const ws = new WebSocket(`ws://localhost/status/${request_id}`);
 
-    const progressBar = document.getElementById('download-progress-bar');
-    progressBar.setAttribute('aria-valuenow', '0');
+    // const progressBar = document.getElementById('download-progress-bar');
+    // progressBar.setAttribute('aria-valuenow', '0');
 
-    ws.addEventListener('message', function (event) {
-        const d = JSON.parse(event.data);
+    // ws.addEventListener('message', function (event) {
+    //     const d = JSON.parse(event.data);
 
-        switch (d['status']) {
-            case 'waiting':
-                progressBar.innerText = 'Waiting';
-                break;
+    //     switch (d['status']) {
+    //         case 'waiting':
+    //             progressBar.innerText = 'Waiting';
+    //             break;
 
-            case 'downloading':
-                const p = String(d['percentage']);
-                progressBar.innerText = 'Downloading';
-                progressBar.setAttribute('aria-valuenow', p);
-                progressBar.setAttribute('style', `width: ${p}%`);
-                break;
+    //         case 'downloading':
+    //             const p = String(d['percentage']);
+    //             progressBar.innerText = 'Downloading';
+    //             progressBar.setAttribute('aria-valuenow', p);
+    //             progressBar.setAttribute('style', `width: ${p}%`);
+    //             break;
 
-            case 'done':
-                progressBar.innerText = 'Done';
-                progressBar.setAttribute('aria-valuenow', '100');
-                progressBar.setAttribute('style', `width: 100%`);
-                break;
+    //         case 'done':
+    //             progressBar.innerText = 'Done';
+    //             progressBar.setAttribute('aria-valuenow', '100');
+    //             progressBar.setAttribute('style', `width: 100%`);
+    //             break;
 
-            case 'error':
-                progressBar.innerText = 'Error';
-                console.error('Error occurred during downloading');
-                break
-        }
-    });
+    //         case 'error':
+    //             progressBar.innerText = 'Error';
+    //             console.error('Error occurred during downloading');
+    //             break
+    //     }
+    // });
 }
 
 inputForm = document.getElementById('input-form');

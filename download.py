@@ -1,5 +1,6 @@
 import logging
 import multiprocessing
+from enum import Enum
 from pathlib import Path
 from typing import List, Any, Optional
 
@@ -14,7 +15,7 @@ from metadata import SongMetadata, add_metadata, force_mp3
 logger = logging.getLogger(__name__)
 
 
-class Status:
+class Status(Enum):
     WAITING = 'waiting'
     DOWNLOADING = 'downloading'
     DONE = 'done'
@@ -68,7 +69,8 @@ def download_and_tag(storage_dir: Path, url: str, meta: SongMetadata, db_engine:
     song_path = force_mp3(song_path)
 
     # TODO: remove hardcoded cover
-    add_metadata(song_path, meta, 'https://i1.sndcdn.com/avatars-32EHFzqYhcwAzmuk-mE2q0g-t500x500.jpg')
+    add_metadata(song_path, meta,
+                 'https://i1.sndcdn.com/avatars-32EHFzqYhcwAzmuk-mE2q0g-t500x500.jpg')
 
     # Step 3: Add song info to persistence
     # Note: weirdly enough SQLAlchemy 1.3 does not work with the session context manager
@@ -82,39 +84,7 @@ def download_and_tag(storage_dir: Path, url: str, meta: SongMetadata, db_engine:
     s.close()
 
 
-def download_worker(q: multiprocessing.Queue, storage: Path):
-    db.dispose()
-    r = redis.Redis(host=settings.REDIS_HOST, port=settings.REDIS_PORT, decode_responses=True)
-
-    while True:
-        req, uuid = q.get()
-        logging.info(f'Worker started on {uuid}')
-
-        # XXX: Maybe insecure, add check if url is valid youtube url
-        url = f'http://youtube.com/watch?v={req.video_id}'
-
-        # function that updates the status of the download in the cache
-        def progress_hook(d: dict):
-            if d['status'] == 'finished':
-                r.set(uuid, Status.DONE)
-                r.expire(uuid, settings.DOWNLOAD_REQUEST_TTL)
-            elif d['status'] == 'downloading' and 'downloaded_bytes' in d and 'total_bytes' in d:
-                if r.get(uuid) != Status.DOWNLOADING:
-                    r.set(uuid, Status.DOWNLOADING)
-
-                r.publish(uuid, 100 * d['downloaded_bytes'] / d['total_bytes'])
-            elif d['status'] == 'error':
-                r.set(uuid, Status.DONE)
-                r.expire(uuid, settings.DOWNLOAD_REQUEST_TTL)
-
-        download_and_tag(storage, url, req, db, [progress_hook])
-
-
-def init_download_workers(q: multiprocessing.Queue, num_workers: int = 3) -> multiprocessing.Pool:
-
-    pool = multiprocessing.Pool(num_workers)
-
-    for _ in range(num_workers):
-        pool.map_async(download_worker, (q, settings.SONGS_STORAGE))
-
-    return pool
+def download_worker(req: SongMetadata):
+    logging.info(f'Worker started on {req.title}')
+    url = f'http://youtube.com/watch?v={req.video_id}'
+    download_and_tag(settings.SONGS_STORAGE, url, req, db, [])
