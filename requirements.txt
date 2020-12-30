@@ -1,13 +1,16 @@
 # Misc
 PyYAML==5.3.1
+python-dotenv==0.15.0
+SQLAlchemy==1.3.22
 
 # Song analysis and processing
 ffmpeg-python==0.2.0
+python-Levenshtein==0.12.0
 fuzzywuzzy==0.18.0
 eyeD3==0.9.5
 
 # API and downloading
-google-api-python-client==1.12.8
+google-api-python-client==1.12.8  # TODO: Replace this with lighter library, e.g. requests
 youtube-dl==2020.12.22
-fastapi==0.63.0
+fastapi[all]==0.63.0 # TODO: Replace with with only fastapi
 redis==3.5.3

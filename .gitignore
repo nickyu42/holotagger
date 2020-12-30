@@ -3,3 +3,4 @@ venv/
 data/songs/
 __pycache__/
 *.sqlite
+.env

@@ -12,6 +12,8 @@ import yaml
 from fuzzywuzzy import process
 from pydantic import BaseModel
 
+import settings
+
 logger = logging.getLogger(__name__)
 
 
@@ -39,12 +41,12 @@ class YoutubeAPI:
     @classmethod
     def init(cls):
         if cls._youtube is None:
-            key = os.environ.get('YOUTUBE_DEVELOPER_KEY')
+            key = settings.YOUTUBE_DEVELOPER_KEY
 
             if key is None:
                 raise RuntimeError('YOUTUBE_DEVELOPER_KEY is not set')
 
-            if os.environ.get('DEBUG', 'false').lower() == 'true':
+            if settings.IS_DEBUG:
                 os.environ["OAUTHLIB_INSECURE_TRANSPORT"] = "1"
 
             # Get credentials and create an API client
@@ -139,6 +141,7 @@ def force_mp3(song: pathlib.Path) -> pathlib.Path:
 
         song = song.with_suffix('.mp3')
         # TODO: improve encoding pipeline
+        # TODO: replace library with subprocess?
         (ffmpeg
          .input(song.resolve())
          # -q:a 0 => variable bit rate

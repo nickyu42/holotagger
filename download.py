@@ -110,13 +110,11 @@ def download_worker(q: multiprocessing.Queue, storage: Path):
         download_and_tag(storage, url, req, db, [progress_hook])
 
 
-def init_download_workers(q: multiprocessing.Queue, num_workers: int = 3) -> list:
-    workers = []
+def init_download_workers(q: multiprocessing.Queue, num_workers: int = 3) -> multiprocessing.Pool:
 
-    for i in range(num_workers):
-        logger.info(f'Started worker {i}')
-        p = multiprocessing.Process(target=download_worker, args=(q, settings.SONGS_STORAGE))
-        p.start()
-        workers.append(p)
+    pool = multiprocessing.Pool(num_workers)
 
-    return workers
+    for _ in range(num_workers):
+        pool.map_async(download_worker, (q, settings.SONGS_STORAGE))
+
+    return pool

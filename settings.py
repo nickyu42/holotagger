@@ -1,11 +1,27 @@
+import os
 from pathlib import Path
 
-SONGS_STORAGE = Path('data/songs')
-DB = Path('data/db.sqlite')
-ARTISTS = Path('data/artists.yaml')
+from dotenv import load_dotenv
 
+ROOT_PATH = Path('.')
+
+# Load environment variables if they exist
+if (ROOT_PATH / '.env').exists():
+    load_dotenv(ROOT_PATH / '.env')
+
+IS_DEBUG = os.environ.get('DEBUG', 'false').lower() == 'true'
+
+# Data storage settings
+SONGS_STORAGE = ROOT_PATH / 'data' / 'songs'
+DB = ROOT_PATH / 'data' / 'db.sqlite'
+ARTISTS = ROOT_PATH / 'data' / 'artists.yaml'
+
+# Redis settings
 REDIS_HOST = 'localhost'
 REDIS_PORT = 6379
 
 # The amount of seconds a download request should exist until timeout
 DOWNLOAD_REQUEST_TTL = 10 * 60
+
+# For getting video info
+YOUTUBE_DEVELOPER_KEY = os.environ.get('YOUTUBE_DEVELOPER_KEY')

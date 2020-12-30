@@ -34,7 +34,7 @@ def create_app():
     logger.addHandler(handler)
 
     # Setup download necessities
-    download_workers: List[multiprocessing.Process] = []
+    download_pool = None
     artists, artists_lookup = load_artists(ARTISTS)
     download_queue = multiprocessing.Queue()
 
@@ -52,15 +52,15 @@ def create_app():
 
     @app.on_event('startup')
     def startup():
+        nonlocal download_pool
         YoutubeAPI.init()
-        download_workers.extend(init_download_workers(download_queue))
+        download_pool = init_download_workers(download_queue)
 
     @app.on_event('shutdown')
     def shutdown():
         download_queue.close()
-        for w in download_workers:
-            w.close()
-
+        download_pool.close()
+        download_pool.join()
         db.close()
 
     @app.get('/')
@@ -69,11 +69,16 @@ def create_app():
 
     @app.post('/metadata', response_model=SongMetadata)
     def metadata(req: MetadataRequest):
+        """Guess info about song from given youtube video id"""
         meta = get_metadata(req.video_id, artists_lookup, artists)
         return meta.dict()
 
     @app.post('/download', response_model=DownloadResponse)
     def download(req: SongMetadata):
+        """
+        Start download of song with given metadata in the background.
+        The status of the download can be tracked using a WebSocket on /status/<REQUEST_ID>. 
+        """
         uuid_ = uuid.uuid4().hex
         r.set(uuid_, Status.WAITING)
         r.expire(uuid_, DOWNLOAD_REQUEST_TTL)
