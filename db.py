@@ -1,8 +1,9 @@
+import datetime
 from pathlib import Path
 from typing import Any, List, Optional, Generator
 from dataclasses import asdict
 
-from sqlalchemy import create_engine, Column, Integer, Text, Table, ForeignKey
+from sqlalchemy import create_engine, Column, Integer, Text, Table, ForeignKey, DateTime
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship, Session
 from pydantic import BaseModel
@@ -33,6 +34,7 @@ class Song(Base):
     id = Column(Integer, primary_key=True)
     title = Column(Text)
     filepath = Column(Text)
+    created_date = Column(DateTime, default=datetime.datetime.utcnow)
 
     # Necessary for tagger field
     _tagger_id = Column(Integer, ForeignKey('tagger.id'), nullable=True)
@@ -53,6 +55,7 @@ class Song(Base):
         album: Optional[str]
         artists: List[str]
         original_artists: List[str]
+        created_date: datetime.datetime
 
     def to_model(self) -> Model:
         model = Song.Model(
@@ -60,6 +63,7 @@ class Song(Base):
             title=self.title,
             artists=[a.name for a in self.artists],
             original_artists=[a.name for a in self.original_artists],
+            created_date=self.created_date,
         )
 
         if self.tagger is not None:

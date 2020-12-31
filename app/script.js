@@ -1,4 +1,14 @@
+const API_HOST = 'localhost'
 let isBusy = false;
+
+function downloadURI(uri) {
+    var link = document.createElement("a");
+    link.download = true;
+    link.href = uri;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+}
 
 function populateForm(json) {
     document.getElementById('title-tag').value = json['title'];
@@ -8,7 +18,7 @@ function populateForm(json) {
 }
 
 function trackStatus(request_id) {
-    const ws = new WebSocket(`ws://localhost/status/ws/${request_id}`);
+    const ws = new WebSocket(`ws://${API_HOST}/status/ws/${request_id}`);
     const formSpinner = document.getElementById('download-form-spinner');
     const downloadButton = document.getElementById('download-form-button');
 
@@ -38,7 +48,7 @@ function trackStatus(request_id) {
 }
 
 function updateSongTable() {
-    fetch('http://localhost/songs', {
+    fetch(`http://${API_HOST}/songs`, {
         method: 'GET',
         mode: 'cors',
         cache: 'no-cache',
@@ -55,7 +65,9 @@ function updateSongTable() {
             for (const song of json) {
                 const row = songTable.insertRow();
                 row.setAttribute('data-song-id', song.id);
-                row.insertCell().innerText = '';
+
+                // XXX: Add Z as the given time is in UTC
+                row.insertCell().innerText = new Date(`${song.created_date}Z`).toLocaleString();
                 row.insertCell().innerText = song.title;
                 row.insertCell().innerText = song.artists.join(',');
                 row.insertCell().innerText = song.album;
@@ -66,7 +78,10 @@ function updateSongTable() {
                 downloadButton.classList.add('btn');
                 downloadButton.classList.add('btn-primary');
                 downloadButton.classList.add('btn-sm');
-                downloadCell.appendChild(downloadButton)
+                downloadButton.addEventListener('click', () => {
+                    downloadURI(`http://localhost/download/${song.id}`);
+                });
+                downloadCell.appendChild(downloadButton);
             }
         })
         .catch((error) => console.error('Error:', error));
@@ -97,7 +112,7 @@ inputForm.addEventListener('submit', ev => {
         return;
     }
 
-    fetch('http://localhost/metadata', {
+    fetch(`http://${API_HOST}/metadata`, {
         method: 'POST',
         mode: 'cors',
         cache: 'no-cache',
@@ -126,7 +141,7 @@ tagForm.addEventListener('submit', ev => {
         'video_id': document.getElementById('youtube-id').value
     };
 
-    fetch('http://localhost/download', {
+    fetch(`http://${API_HOST}/convert`, {
         method: 'POST',
         mode: 'cors',
         cache: 'no-cache',
@@ -143,7 +158,7 @@ tagForm.addEventListener('submit', ev => {
 });
 
 // Check if backend is available
-fetch('http://localhost/', {
+fetch(`http://${API_HOST}/`, {
     mode: 'cors',
     cache: 'no-cache',
     redirect: 'follow',

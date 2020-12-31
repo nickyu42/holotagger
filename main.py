@@ -4,6 +4,7 @@ import multiprocessing
 import sys
 import uuid
 import time
+import copy
 from concurrent.futures.process import ProcessPoolExecutor
 from typing import List, Optional, Callable
 from http import HTTPStatus
@@ -19,7 +20,7 @@ from sqlalchemy.orm import Session
 from db import db, get_songs, Song
 from download import Status, download_worker
 from metadata import get_metadata, YoutubeAPI, load_artists, SongMetadata
-from settings import ARTISTS, REDIS_PORT, REDIS_HOST, DOWNLOAD_REQUEST_TTL
+from settings import ARTISTS, DOWNLOAD_REQUEST_TTL
 
 
 class MetadataRequest(BaseModel):
@@ -39,6 +40,10 @@ class DownloadJob(BaseModel):
     def listen(self, o: Callable):
         self._observers.append(o)
 
+    def remove_observer(self, o: Callable):
+        if o in self._observers:
+            self._observers.remove(o)
+
     class Config:
         use_enum_values = True
 
@@ -54,7 +59,7 @@ def create_app():
     # Setup download necessities
     artists, artists_lookup = load_artists(ARTISTS)
     jobs: cachetools.TTLCache[uuid.UUID, DownloadJob] = \
-        cachetools.TTLCache(1_000, 10 * 60)
+        cachetools.TTLCache(1_000, DOWNLOAD_REQUEST_TTL)
 
     app = FastAPI()
 
@@ -96,7 +101,7 @@ def create_app():
         return {'status': 'ready'}
 
     @app.post('/metadata', response_model=SongMetadata)
-    def metadata(video_id: str):
+    def metadata(req: MetadataRequest):
         """Guess info about song from given youtube video id"""
         meta = get_metadata(req.video_id, artists_lookup, artists)
         return meta.dict()
@@ -155,7 +160,16 @@ def create_app():
 
         await ws.send_text(job.json())
 
-        while (job.status == Status.DOWNLOADING or job.status == Status.WAITING) and time.time() - start <= 30:
+        while (job.status == Status.DOWNLOADING or job.status == Status.WAITING):
+            # Send error on timeout
+            if time.time() - start <= 30:
+                job.remove_observer(notifier)
+                # copy job so we don't modify the original
+                jc = copy.deepcopy(job)
+                jc.status = Status.ERROR
+                await ws.send_text(jc.json())
+                break
+
             await asyncio.sleep(0.1)
 
         await ws.close()

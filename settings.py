@@ -16,10 +16,6 @@ SONGS_STORAGE = ROOT_PATH / 'data' / 'songs'
 DB = ROOT_PATH / 'data' / 'db.sqlite'
 ARTISTS = ROOT_PATH / 'data' / 'artists.yaml'
 
-# Redis settings
-REDIS_HOST = 'localhost'
-REDIS_PORT = 6379
-
 # The amount of seconds a download request should exist until timeout
 DOWNLOAD_REQUEST_TTL = 10 * 60
 
