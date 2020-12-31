@@ -158,7 +158,7 @@ def get_or_create_artists(session: Session, artist_names: List[str]) -> List[Art
 
 
 def get_songs(session: Session, limit: Optional[int] = None) -> Generator[Song.Model, None, None]:
-    q = session.query(Song).order_by(~Song.id)
+    q = session.query(Song).order_by(Song.created_date.desc())
 
     if limit is not None:
         q = q.limit(limit)
