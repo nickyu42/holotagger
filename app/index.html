@@ -106,33 +106,27 @@
 
         <label for="youtube-id" hidden></label><input id="youtube-id" hidden value="">
 
-        <button type="submit" class="btn btn-primary">Done</button>
+        <button type="submit" class="btn btn-primary" id="download-form-button">Done</button>
+        <span class="spinner-border spinner-border-sm"
+              role="status" aria-hidden="true" id="download-form-spinner" hidden>
+        </span>
     </form>
-
-    <br>
-
-    <div class="progress">
-        <div class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" aria-valuenow="0"
-             aria-valuemin="0" aria-valuemax="100" id="download-progress-bar"></div>
-    </div>
 
     <br>
 
     <h3>3. Get link</h3>
     <table class="table table-sm table-hover">
         <thead>
-        <tr>
-            <th scope="col">Tagged on</th>
-            <th scope="col">Title</th>
-            <th scope="col">Artist</th>
-            <th scope="col">Album</th>
-            <th scope="col">Link</th>
-        </tr>
+            <tr>
+                <th scope="col">Tagged on</th>
+                <th scope="col">Title</th>
+                <th scope="col">Artists</th>
+                <th scope="col">Album</th>
+                <th scope="col">Link</th>
+            </tr>
         </thead>
 
-        <tbody>
-
-        </tbody>
+        <tbody id="song-table"></tbody>
     </table>
 
     <br>

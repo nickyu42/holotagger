@@ -7,39 +7,69 @@ function populateForm(json) {
     document.getElementById('youtube-id').value = json['video_id'];
 }
 
-function track_status(request_id) {
-    // const ws = new WebSocket(`ws://localhost/status/${request_id}`);
+function trackStatus(request_id) {
+    const ws = new WebSocket(`ws://localhost/status/ws/${request_id}`);
+    const formSpinner = document.getElementById('download-form-spinner');
+    const downloadButton = document.getElementById('download-form-button');
 
-    // const progressBar = document.getElementById('download-progress-bar');
-    // progressBar.setAttribute('aria-valuenow', '0');
+    formSpinner.hidden = false;
+    downloadButton.disabled = true;
 
-    // ws.addEventListener('message', function (event) {
-    //     const d = JSON.parse(event.data);
+    ws.addEventListener('message', function (event) {
+        const status = JSON.parse(event.data)['status'];
+        downloadButton.innerText = status.charAt(0).toUpperCase() + status.slice(1);
+        switch (status) {
+            case 'done':
+                formSpinner.hidden = true;
+                downloadButton.disabled = false;
+                updateSongTable();
+                break;
 
-    //     switch (d['status']) {
-    //         case 'waiting':
-    //             progressBar.innerText = 'Waiting';
-    //             break;
+            case 'downloading':
+                downloadButton.innerText = 'Converting';
+                break;
 
-    //         case 'downloading':
-    //             const p = String(d['percentage']);
-    //             progressBar.innerText = 'Downloading';
-    //             progressBar.setAttribute('aria-valuenow', p);
-    //             progressBar.setAttribute('style', `width: ${p}%`);
-    //             break;
+            case 'error':
+                formSpinner.hidden = true;
+                downloadButton.disabled = false;
+                break
+        }
+    });
+}
 
-    //         case 'done':
-    //             progressBar.innerText = 'Done';
-    //             progressBar.setAttribute('aria-valuenow', '100');
-    //             progressBar.setAttribute('style', `width: 100%`);
-    //             break;
+function updateSongTable() {
+    fetch('http://localhost/songs', {
+        method: 'GET',
+        mode: 'cors',
+        cache: 'no-cache',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        redirect: 'follow',
+        referrerPolicy: 'no-referrer',
+    })
+        .then(response => response.json())
+        .then(json => {
+            const songTable = document.getElementById('song-table');
+            
+            for (const song of json) {
+                const row = songTable.insertRow();
+                row.setAttribute('data-song-id', song.id);
+                row.insertCell().innerText = '';
+                row.insertCell().innerText = song.title;
+                row.insertCell().innerText = song.artists.join(',');
+                row.insertCell().innerText = song.album;
+                const downloadCell = row.insertCell();
 
-    //         case 'error':
-    //             progressBar.innerText = 'Error';
-    //             console.error('Error occurred during downloading');
-    //             break
-    //     }
-    // });
+                const downloadButton = document.createElement('button');
+                downloadButton.innerText = 'Download';
+                downloadButton.classList.add('btn');
+                downloadButton.classList.add('btn-primary');
+                downloadButton.classList.add('btn-sm');
+                downloadCell.appendChild(downloadButton)
+            }
+        })
+        .catch((error) => console.error('Error:', error));
 }
 
 inputForm = document.getElementById('input-form');
@@ -80,9 +110,7 @@ inputForm.addEventListener('submit', ev => {
     })
         .then(response => response.json())
         .then(json => populateForm(json))
-        .catch((error) => {
-            console.error('Error:', error);
-        });
+        .catch((error) => console.error('Error:', error));
 });
 
 tagForm = document.getElementById('tag-form');
@@ -110,10 +138,8 @@ tagForm.addEventListener('submit', ev => {
         body: JSON.stringify(dlRequest),
     })
         .then(response => response.json())
-        .then(json => track_status(json['request_id']))
-        .catch((error) => {
-            console.error('Error:', error);
-        });
+        .then(json => trackStatus(json['request_id']))
+        .catch((error) => console.error('Error:', error));
 });
 
 // Check if backend is available
@@ -126,11 +152,10 @@ fetch('http://localhost/', {
     .then(response => {
         if (response.status !== 200) {
             document.getElementById('status-alert').hidden = false;
+        } else {
+            updateSongTable();
         }
     })
     .catch(_ => {
         document.getElementById('status-alert').hidden = false;
     });
-
-
-

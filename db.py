@@ -41,26 +41,34 @@ class Song(Base):
     _album_id = Column(Integer, ForeignKey('album.id'), nullable=True)
 
     # Abstract relationship fields
-    artists = relationship('Artist', secondary=artist_association, backref='songs')
-    original_artists = relationship('Artist', secondary=original_artist_association, backref='original_songs')
+    artists = relationship(
+        'Artist', secondary=artist_association, backref='songs')
+    original_artists = relationship(
+        'Artist', secondary=original_artist_association, backref='original_songs')
 
     class Model(BaseModel):
         id: int
         title: str
-        tagger: str
-        album: str
+        tagger: Optional[str]
+        album: Optional[str]
         artists: List[str]
         original_artists: List[str]
 
     def to_model(self) -> Model:
-        return Song.Model(
+        model = Song.Model(
             id=self.id,
             title=self.title,
-            tagger=self.tagger.name,
-            album=self.album.name,
             artists=[a.name for a in self.artists],
             original_artists=[a.name for a in self.original_artists],
         )
+
+        if self.tagger is not None:
+            model.tagger = self.tagger.name
+
+        if self.album is not None:
+            model.album = self.album.name
+
+        return model
 
 
 class Artist(Base):

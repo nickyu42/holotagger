@@ -3,15 +3,16 @@ import logging
 import multiprocessing
 import sys
 import uuid
+import time
 from concurrent.futures.process import ProcessPoolExecutor
-from typing import List, Optional
+from typing import List, Optional, Callable
 from http import HTTPStatus
 
 import cachetools
 import redis
-from fastapi import FastAPI, WebSocket, BackgroundTasks
+from fastapi import FastAPI, WebSocket, BackgroundTasks, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel
+from pydantic import BaseModel, PrivateAttr
 from sqlalchemy.orm import Session
 
 from db import db, get_songs, Song
@@ -28,7 +29,16 @@ class DownloadJob(BaseModel):
     request_id: uuid.UUID
     status: Status
 
-    class Config:  
+    _observers: List[Callable] = PrivateAttr(default_factory=list)
+
+    async def notify(self):
+        for o in self._observers:
+            await o(self)
+
+    def listen(self, o: Callable):
+        self._observers.append(o)
+
+    class Config:
         use_enum_values = True
 
 
@@ -57,9 +67,18 @@ def create_app():
 
     async def start_download(uid: uuid.UUID, *args) -> None:
         loop = asyncio.get_event_loop()
-        jobs[uid].status = Status.DOWNLOADING
-        await loop.run_in_executor(app.state.executor, download_worker, *args)
-        jobs[uid].status = Status.DONE
+        job = jobs[uid]
+        job.status = Status.DOWNLOADING
+        await job.notify()
+        try:
+            await loop.run_in_executor(app.state.executor, download_worker, *args)
+        except:
+            job.status = Status.ERROR
+            await job.notify()
+            return
+        
+        job.status = Status.DONE
+        await job.notify()
 
     @app.on_event('startup')
     def startup():
@@ -103,12 +122,30 @@ def create_app():
 
         return jobs[uid].dict()
 
-    @app.get('status/{uid}', response_model=DownloadJob)
+    @app.get('/status/{uid}', response_model=DownloadJob)
     async def status(uid: uuid.UUID):
         """Get status on download job"""
         if uid not in jobs:
-            return
+            return HTTPException(status_code=404, detail='Job with uid not found')
 
         return jobs[uid].dict()
+
+    @app.websocket('/status/ws/{uid}')
+    async def status_ws(uid: uuid.UUID, ws: WebSocket):
+        await ws.accept()
+
+        async def notifier(job):
+            await ws.send_text(job.json())
+
+        start = time.time()
+        job = jobs[uid]
+        job.listen(notifier)
+
+        await ws.send_text(job.json())
+
+        while (job.status == Status.DOWNLOADING or job.status == Status.WAITING) and time.time() - start <= 30:
+            await asyncio.sleep(0.1)
+
+        await ws.close()
 
     return app
