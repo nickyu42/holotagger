@@ -11,6 +11,7 @@ from http import HTTPStatus
 import cachetools
 import redis
 from fastapi import FastAPI, WebSocket, BackgroundTasks, HTTPException
+from fastapi.responses import FileResponse
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, PrivateAttr
 from sqlalchemy.orm import Session
@@ -95,7 +96,7 @@ def create_app():
         return {'status': 'ready'}
 
     @app.post('/metadata', response_model=SongMetadata)
-    def metadata(req: MetadataRequest):
+    def metadata(video_id: str):
         """Guess info about song from given youtube video id"""
         meta = get_metadata(req.video_id, artists_lookup, artists)
         return meta.dict()
@@ -111,16 +112,27 @@ def create_app():
         finally:
             s.close()
 
-    @app.post('/download', response_model=DownloadJob, status_code=HTTPStatus.ACCEPTED)
-    def download(req: SongMetadata, background_tasks: BackgroundTasks):
-        """
-        Start download of song with given metadata in the background.
-        """
+    @app.post('/convert', response_model=DownloadJob, status_code=HTTPStatus.ACCEPTED)
+    def convert(req: SongMetadata, background_tasks: BackgroundTasks):
+        """Start download and conversion of song with given metadata in the background"""
         uid = uuid.uuid4()
         jobs[uid] = DownloadJob(request_id=uid, status=Status.WAITING)
         background_tasks.add_task(start_download, uid, req)
 
         return jobs[uid].dict()
+
+    @app.get('/download/{song_id}')
+    def download(song_id: int):
+        """Download stored song with given id"""
+        s = Session(db)
+
+        song = s.query(Song).get(song_id)
+        if song is None:
+            raise HTTPException(status_code=404, detail='Song with song_id not found')
+
+        s.close()
+
+        return FileResponse(song.filepath, filename=song.title, media_type='audio/mp3')
 
     @app.get('/status/{uid}', response_model=DownloadJob)
     async def status(uid: uuid.UUID):
