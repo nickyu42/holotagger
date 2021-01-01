@@ -67,12 +67,13 @@ function updateSongTable() {
                 row.setAttribute('data-song-id', song.id);
 
                 // XXX: Add Z as the given time is in UTC
-                row.insertCell().innerText = new Date(`${song.created_date}Z`).toLocaleString();
                 row.insertCell().innerText = song.title;
                 row.insertCell().innerText = song.artists.join(',');
                 row.insertCell().innerText = song.album;
                 const downloadCell = row.insertCell();
-
+                row.insertCell().innerText = new Date(`${song.created_date}Z`).toLocaleString();
+                row.insertCell().innerText = song.tagger === null ? '-' : song.tagger;
+                
                 const downloadButton = document.createElement('button');
                 downloadButton.innerText = 'Download';
                 downloadButton.classList.add('btn');
@@ -82,6 +83,7 @@ function updateSongTable() {
                     downloadURI(`http://localhost/download/${song.id}`);
                 });
                 downloadCell.appendChild(downloadButton);
+                
             }
         })
         .catch((error) => console.error('Error:', error));

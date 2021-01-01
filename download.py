@@ -4,7 +4,6 @@ from enum import Enum
 from pathlib import Path
 from typing import List, Any, Optional
 
-import redis as redis
 import youtube_dl
 from sqlalchemy.orm import Session
 

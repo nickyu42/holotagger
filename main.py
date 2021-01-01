@@ -10,7 +10,6 @@ from typing import List, Optional, Callable
 from http import HTTPStatus
 
 import cachetools
-import redis
 from fastapi import FastAPI, WebSocket, BackgroundTasks, HTTPException
 from fastapi.responses import FileResponse
 from fastapi.middleware.cors import CORSMiddleware
@@ -162,7 +161,7 @@ def create_app():
 
         while (job.status == Status.DOWNLOADING or job.status == Status.WAITING):
             # Send error on timeout
-            if time.time() - start <= 30:
+            if time.time() - start > 30:
                 job.remove_observer(notifier)
                 # copy job so we don't modify the original
                 jc = copy.deepcopy(job)
