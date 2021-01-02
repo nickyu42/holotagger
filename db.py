@@ -1,12 +1,11 @@
 import datetime
 from pathlib import Path
 from typing import Any, List, Optional, Generator
-from dataclasses import asdict
 
+from pydantic import BaseModel
 from sqlalchemy import create_engine, Column, Integer, Text, Table, ForeignKey, DateTime
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship, Session
-from pydantic import BaseModel
 
 import settings
 from metadata import SongMetadata

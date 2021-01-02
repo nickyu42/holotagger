@@ -61,7 +61,7 @@ function updateSongTable() {
         .then(response => response.json())
         .then(json => {
             const songTable = document.getElementById('song-table');
-            
+
             for (const song of json) {
                 const row = songTable.insertRow();
                 row.setAttribute('data-song-id', song.id);
@@ -73,7 +73,7 @@ function updateSongTable() {
                 const downloadCell = row.insertCell();
                 row.insertCell().innerText = new Date(`${song.created_date}Z`).toLocaleString();
                 row.insertCell().innerText = song.tagger === null ? '-' : song.tagger;
-                
+
                 const downloadButton = document.createElement('button');
                 downloadButton.innerText = 'Download';
                 downloadButton.classList.add('btn');
@@ -83,7 +83,7 @@ function updateSongTable() {
                     downloadURI(`http://localhost/download/${song.id}`);
                 });
                 downloadCell.appendChild(downloadButton);
-                
+
             }
         })
         .catch((error) => console.error('Error:', error));

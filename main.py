@@ -1,18 +1,17 @@
 import asyncio
-import logging
-import multiprocessing
-import sys
-import uuid
-import time
 import copy
+import logging
+import sys
+import time
+import uuid
 from concurrent.futures.process import ProcessPoolExecutor
-from typing import List, Optional, Callable
 from http import HTTPStatus
+from typing import List, Optional, Callable
 
 import cachetools
 from fastapi import FastAPI, WebSocket, BackgroundTasks, HTTPException
-from fastapi.responses import FileResponse
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import FileResponse
 from pydantic import BaseModel, PrivateAttr
 from sqlalchemy.orm import Session
 
@@ -81,7 +80,7 @@ def create_app():
             job.status = Status.ERROR
             await job.notify()
             return
-        
+
         job.status = Status.DONE
         await job.notify()
 
@@ -159,7 +158,7 @@ def create_app():
 
         await ws.send_text(job.json())
 
-        while (job.status == Status.DOWNLOADING or job.status == Status.WAITING):
+        while job.status == Status.DOWNLOADING or job.status == Status.WAITING:
             # Send error on timeout
             if time.time() - start > 30:
                 job.remove_observer(notifier)
