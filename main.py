@@ -9,16 +9,17 @@ from http import HTTPStatus
 from typing import List, Optional, Callable
 
 import cachetools
+import slugify
 from fastapi import FastAPI, WebSocket, BackgroundTasks, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 from pydantic import BaseModel, PrivateAttr
 from sqlalchemy.orm import Session
 
-from db import db, get_songs, Song
+from db import db, get_songs, Song, Artist
 from download import Status, download_worker
 from metadata import get_metadata, YoutubeAPI, load_artists, SongMetadata
-from settings import ARTISTS, DOWNLOAD_REQUEST_TTL
+from settings import ARTISTS, DOWNLOAD_REQUEST_TTL, COVER_DIR
 
 
 class MetadataRequest(BaseModel):
@@ -76,7 +77,7 @@ def create_app():
         await job.notify()
         try:
             await loop.run_in_executor(app.state.executor, download_worker, *args)
-        except:
+        except:  # noqa
             job.status = Status.ERROR
             await job.notify()
             return
@@ -106,6 +107,7 @@ def create_app():
 
     @app.get('/songs', response_model=List[Song.Model])
     def songs(limit: Optional[int] = None):
+        """Get all tagged songs"""
         s = Session(db)
         try:
             return [s.to_model() for s in get_songs(s, limit=limit)]
@@ -131,7 +133,7 @@ def create_app():
 
         song = s.query(Song).get(song_id)
         if song is None:
-            raise HTTPException(status_code=404, detail='Song with song_id not found')
+            raise HTTPException(status_code=404, detail=f'Song with song_id {song_id} not found')
 
         s.close()
 
@@ -141,16 +143,33 @@ def create_app():
     async def status(uid: uuid.UUID):
         """Get status on download job"""
         if uid not in jobs:
-            return HTTPException(status_code=404, detail='Job with uid not found')
+            return HTTPException(status_code=404, detail=f'Job with uid {uid} not found')
 
         return jobs[uid].dict()
+
+    @app.get('/cover/{artist_id}')
+    async def cover(artist_id: int):
+        """Get the cover art of an artist if it exists"""
+        s = Session(db)
+
+        artist = s.query(Artist).get(artist_id)
+        if artist is None:
+            raise HTTPException(status_code=404, detail=f'Artist with artist_id {artist_id} not found')
+
+        s.close()
+
+        cover_path = COVER_DIR / f'{slugify.slugify(artist.name)}.jpg'
+        if not cover_path.exists():
+            raise HTTPException(status_code=404, detail=f'Artist with artist_id {artist_id} does not have a cover')
+
+        return FileResponse(cover_path.resolve(), media_type='image/jpeg')
 
     @app.websocket('/status/ws/{uid}')
     async def status_ws(uid: uuid.UUID, ws: WebSocket):
         await ws.accept()
 
-        async def notifier(job):
-            await ws.send_text(job.json())
+        async def notifier(j: DownloadJob):
+            await ws.send_text(j.json())
 
         start = time.time()
         job = jobs[uid]

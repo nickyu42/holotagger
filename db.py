@@ -16,6 +16,11 @@ Base = declarative_base()
 class Song(Base):
     __tablename__ = 'song'
 
+    # Columns from backrefs
+    # necessary for typing
+    album: Column
+    tagger: Column
+
     artist_association = Table(
         'song_artist_table',
         Base.metadata,
@@ -145,6 +150,10 @@ def add_song(s: Session, meta: SongMetadata, path: Path):
 
 
 def get_or_create_artists(session: Session, artist_names: List[str]) -> List[Artist]:
+    """
+    Create Artist objects for each element in ``artist_names`` if no artist exists
+    with the name already.
+    """
     artists = []
     for name in artist_names:
         row = session.query(Artist).filter(Artist.name == name).scalar()
@@ -156,7 +165,14 @@ def get_or_create_artists(session: Session, artist_names: List[str]) -> List[Art
     return artists
 
 
-def get_songs(session: Session, limit: Optional[int] = None) -> Generator[Song.Model, None, None]:
+def get_songs(session: Session, limit: Optional[int] = None) -> Generator[Song, None, None]:
+    """
+    Query Song objects from the database, ordered by created date.
+
+    :param session: current db session
+    :param limit: the max number of songs to retrieve
+    :return: a generator yielding the Song objects
+    """
     q = session.query(Song).order_by(Song.created_date.desc())
 
     if limit is not None:
