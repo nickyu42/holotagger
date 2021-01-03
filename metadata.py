@@ -18,12 +18,16 @@ logger = logging.getLogger(__name__)
 
 
 class SongMetadata(BaseModel):
+    # Embedded metadata
     title: str
     artists: List[str]
     album: str
     original_artists: List[str]
+
+    # Other metadata
     video_id: str
     tagger: Optional[str]
+    thumbnail_url: Optional[str]
 
 
 class ArtistMetadata(BaseModel):
@@ -80,8 +84,9 @@ def get_metadata(video_id: str, choices: dict, artists: List[ArtistMetadata]) ->
 
     guessed_artists = set()
 
-    for a in (a for a in artists if a.yt_id == response['channelId']):
-        guessed_artists.add(a.name)
+    for a in artists:
+        if a.yt_id == response['channelId']:
+            guessed_artists.add(a.name)
 
     guessed_artists |= guess_artist(title, choices)
 
@@ -90,8 +95,9 @@ def get_metadata(video_id: str, choices: dict, artists: List[ArtistMetadata]) ->
         artists=list(guessed_artists),
         album='Vtuber Covers',
         original_artists=[],
-        tagger=None,
         video_id=video_id,
+        tagger=None,
+        thumbnail_url=response['thumbnails']['maxres']['url'],
     )
 
 

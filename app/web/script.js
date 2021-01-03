@@ -1,4 +1,5 @@
 const API_HOST = 'localhost'
+let lastThumbnail = null;
 let isBusy = false;
 
 function downloadURI(uri) {
@@ -15,6 +16,7 @@ function populateForm(json) {
     document.getElementById('artist-tag').value = json['artists'].join(',');
     document.getElementById('album-tag').value = json['album'];
     document.getElementById('youtube-id').value = json['video_id'];
+    lastThumbnail = json['thumbnail_url'];
 }
 
 function trackStatus(request_id) {
@@ -33,6 +35,7 @@ function trackStatus(request_id) {
                 formSpinner.hidden = true;
                 downloadButton.disabled = false;
                 updateSongTable();
+                isBusy = false;
                 break;
 
             case 'downloading':
@@ -42,9 +45,13 @@ function trackStatus(request_id) {
             case 'error':
                 formSpinner.hidden = true;
                 downloadButton.disabled = false;
+                isBusy = false;
                 break
         }
     });
+
+    ws.addEventListener('close', _ => isBusy = false);
+    ws.addEventListener('error', _ => isBusy = false);
 }
 
 function updateSongTable() {
@@ -61,6 +68,9 @@ function updateSongTable() {
         .then(response => response.json())
         .then(json => {
             const songTable = document.getElementById('song-table');
+
+            // XXX: Force clear table
+            songTable.innerHTML = '';
 
             for (const song of json) {
                 const row = songTable.insertRow();
@@ -83,7 +93,6 @@ function updateSongTable() {
                     downloadURI(`http://localhost/download/${song.id}`);
                 });
                 downloadCell.appendChild(downloadButton);
-
             }
         })
         .catch((error) => console.error('Error:', error));
@@ -143,6 +152,7 @@ tagForm.addEventListener('submit', ev => {
         'video_id': document.getElementById('youtube-id').value
     };
 
+    isBusy = true;
     fetch(`http://${API_HOST}/convert`, {
         method: 'POST',
         mode: 'cors',
@@ -156,7 +166,10 @@ tagForm.addEventListener('submit', ev => {
     })
         .then(response => response.json())
         .then(json => trackStatus(json['request_id']))
-        .catch((error) => console.error('Error:', error));
+        .catch((error) => {
+            console.error('Error:', error);
+            isBusy = false;
+        });
 });
 
 // Check if backend is available

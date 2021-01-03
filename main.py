@@ -179,7 +179,7 @@ def create_app():
 
         while job.status == Status.DOWNLOADING or job.status == Status.WAITING:
             # Send error on timeout
-            if time.time() - start > 30:
+            if time.time() - start > 60:
                 job.remove_observer(notifier)
                 # copy job so we don't modify the original
                 jc = copy.deepcopy(job)

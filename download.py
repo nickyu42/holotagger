@@ -82,7 +82,8 @@ def download_and_tag(storage_dir: Path, url: str, meta: SongMetadata, db_engine:
     s = Session(db_engine)
     try:
         add_song(s, meta, song_path)
-    except:  # noqa
+    except Exception as e:  # noqa
+        logger.error(e)
         s.rollback()
         raise
     s.close()
