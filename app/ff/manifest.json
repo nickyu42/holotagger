@@ -1,0 +1,18 @@
+{
+    "manifest_version": 2,
+    "name": "HoloTagger",
+    "version": "0.0.1",
+    "description": "Extension for HoloTagger",
+    "content_scripts": [
+      {
+        "matches": ["*://*.youtube.com/*"],
+        "js": ["holotagger.js"]
+      }
+    ],
+    "browser_action": {
+        "default_icon": {
+          "19": "icon-19.png"
+        },
+        "default_popup": "popup.html"
+      }
+  }
