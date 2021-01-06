@@ -1,3 +1,3 @@
-#!bin/sh
+#!/bin/sh
 
-uvicorn main:create_app --reload --factory
+uvicorn main:create_app --factory --port 80

@@ -68,15 +68,21 @@
   <br>
 
   <h3>2. Tag the song</h3>
-  <form id="tag-form">
+  <form id="tag-form" class="needs-validation" novalidate>
     <div class="mb-3 input-group">
-      <input class="form-control" id="title-tag" placeholder="Title" aria-label="Title">
+      <input class="form-control" id="title-tag" placeholder="Title" aria-label="Title" required>
       <span class="input-group-text">By</span>
-      <input class="form-control" id="artist-tag" placeholder="Artist" aria-label="Artist">
+      <input class="form-control" id="artist-tag" placeholder="Artist" aria-label="Artist" required>
+      <div class="invalid-feedback">
+        Please choose a valid title and non-empty artists.
+      </div>
     </div>
 
-    <div class="mb-3">
-      <input class="form-control" id="album-tag" placeholder="Album" aria-label="Album">
+    <div class="mb-3 input-group">
+      <input class="form-control" id="album-tag" placeholder="Album" aria-label="Album" required>
+      <div class="invalid-feedback">
+        Please choose a valid album name, use "Vtuber Covers" if unsure.
+      </div>
     </div>
 
     <div class="mb-3">

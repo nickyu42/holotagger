@@ -1,10 +1,11 @@
+'use strict';
+
 const API_HOST = 'localhost'
 let lastThumbnail = null;
 let isBusy = false;
 
 function downloadURI(uri) {
-    var link = document.createElement("a");
-    link.download = true;
+    const link = document.createElement("a");
     link.href = uri;
     document.body.appendChild(link);
     link.click();
@@ -98,7 +99,7 @@ function updateSongTable() {
         .catch((error) => console.error('Error:', error));
 }
 
-inputForm = document.getElementById('input-form');
+const inputForm = document.getElementById('input-form');
 inputForm.addEventListener('submit', ev => {
     ev.preventDefault();
 
@@ -139,7 +140,7 @@ inputForm.addEventListener('submit', ev => {
         .catch((error) => console.error('Error:', error));
 });
 
-tagForm = document.getElementById('tag-form');
+const tagForm = document.getElementById('tag-form');
 tagForm.addEventListener('submit', ev => {
     ev.preventDefault();
 
@@ -172,20 +173,35 @@ tagForm.addEventListener('submit', ev => {
         });
 });
 
-// Check if backend is available
-fetch(`http://${API_HOST}/`, {
-    mode: 'cors',
-    cache: 'no-cache',
-    redirect: 'follow',
-    referrerPolicy: 'no-referrer',
-})
-    .then(response => {
-        if (response.status !== 200) {
-            document.getElementById('status-alert').hidden = false;
-        } else {
-            updateSongTable();
+window.addEventListener('load', function() {
+    // Fetch all the forms we want to apply custom Bootstrap validation styles to
+    const forms = document.getElementsByClassName('needs-validation');
+    // Loop over them and prevent submission
+    Array.prototype.filter.call(forms, form => {
+      form.addEventListener('submit', event => {
+        if (form.checkValidity() === false) {
+          event.preventDefault();
+          event.stopPropagation();
         }
-    })
-    .catch(_ => {
-        document.getElementById('status-alert').hidden = false;
+        form.classList.add('was-validated');
+      }, false);
     });
+
+    // Check if backend is available
+    fetch(`http://${API_HOST}/`, {
+        mode: 'cors',
+        cache: 'no-cache',
+        redirect: 'follow',
+        referrerPolicy: 'no-referrer',
+    })
+        .then(response => {
+            if (response.status !== 200) {
+                document.getElementById('status-alert').hidden = false;
+            } else {
+                updateSongTable();
+            }
+        })
+        .catch(_ => {
+            document.getElementById('status-alert').hidden = false;
+        });
+}, false);
