@@ -1,80 +1,84 @@
 <!doctype html>
 
-<html lang="en">
+<html lang="en" xmlns="http://www.w3.org/1999/html">
 <head>
   <meta charset="utf-8">
-  <title>Holotagger</title>
+  <title>HoloTagger</title>
   <meta name="author" content="Nick Yu">
-  <!-- Bootstrap css -->
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta1/dist/css/bootstrap.min.css" rel="stylesheet"
         integrity="sha384-giJF6kkoqNQ00vy+HMDP7azOuL0xtbfIcaT9wjKHr8RbDVddVHyTfAAsrekwKmP1" crossorigin="anonymous">
-
-  <style>
-      @font-face {
-          font-family: chicago;
-          src: url('ChicagoFLF.ttf')
-      }
-  </style>
+  <link href="style.css" rel="stylesheet">
 </head>
 
 <body>
 
 <main class="container">
   <h1 class="display-1" style="color: #27c7fe; font-family: chicago,sans-serif">HoloTagger</h1>
-  <h4 class="text-muted">Built by a degenerate, for degenerates.</h4>
-
-  <br>
+  <h4 class="text-muted mb-3">Built by a degenerate, for degenerates.</h4>
 
   <div class="alert alert-danger" role="alert" id="status-alert" hidden>
     HoloTagger is currently unavailable, contact the maintainer for info.
   </div>
 
-  <b>What is this?</b> <br>
-  A tool for tagging and downloading Hololive covers from Youtube <br>
-  <br>
+  <div class="row mb-3">
+    <div class="col p-2">
+      <b>What is this?</b> <br>
+      A tool for tagging and downloading Hololive covers from Youtube
+    </div>
+  </div>
 
-  <b>How do I use it?</b> <br>
+  <div class="row mb-3">
+    <div class="col">
+      <b>How do I use it?</b> <br>
+      <ol>
+        <li>Paste the Youtube link of a song and press
+          <button type="button" class="btn btn-primary btn-sm" disabled>Get Metadata</button>
+        </li>
+        <li>
+          Tags will be automatically generated,
+          you can alter the tags and press
+          <button type="button" class="btn btn-primary btn-sm" disabled>Done</button>
+          when satisfied
+        </li>
+        <li>
+          Download the song from the list of links
+        </li>
+      </ol>
+    </div>
+  </div>
 
-  <ol>
-    <li>Paste the Youtube link of a song and press
-      <button type="button" class="btn btn-primary btn-sm" disabled>Get Metadata</button>
-    </li>
+  <h3 class="mb-3">1. Get metadata</h3>
 
-    <li>
-      Tags will be automatically generated,
-      you can alter the tags and press
-      <button type="button" class="btn btn-primary btn-sm" disabled>Done</button>
-      when satisfied
-    </li>
-
-    <li>
-      Download the song from the list of links
-    </li>
-  </ol>
-
-  <br>
-
-  <h3>1. Get metadata</h3>
   <form id="input-form">
-    <div class="mb-3">
+    <div class="mb-3 w-50">
       <input class="form-control" id="youtube-form-link" aria-describedby="youtube-help" aria-label="Youtube Link"
              placeholder="Youtube Link">
       <div id="youtube-help" class="form-text">For example: https://www.youtube.com/watch?v=pFgUluV_00s</div>
     </div>
-
-    <button type="submit" class="btn btn-primary">Get metadata</button>
+    <button type="submit" class="btn btn-primary mb-3">Get metadata</button>
   </form>
 
-  <br>
+  <h3 class="mb-3">2. Tag the song</h3>
 
-  <h3>2. Tag the song</h3>
   <form id="tag-form" class="needs-validation" novalidate>
-    <div class="mb-3 input-group">
-      <input class="form-control" id="title-tag" placeholder="Title" aria-label="Title" required>
-      <span class="input-group-text">By</span>
-      <input class="form-control" id="artist-tag" placeholder="Artist" aria-label="Artist" required>
-      <div class="invalid-feedback">
-        Please choose a valid title and non-empty artists.
+    <div class="row">
+      <div class="col-6">
+        <div class="mb-3 input-group">
+          <input class="form-control" id="title-tag" placeholder="Title" aria-label="Title" required>
+          <div class="invalid-feedback">
+            Please choose a valid title.
+          </div>
+        </div>
+      </div>
+
+      <div class="col-6">
+        <div class="mb-3 input-group">
+          <span class="input-group-text">By</span>
+          <input class="form-control" id="artist-tag" placeholder="Artists" aria-label="Artist" required>
+          <div class="invalid-feedback">
+            Please choose non-empty artists.
+          </div>
+        </div>
       </div>
     </div>
 
@@ -93,32 +97,39 @@
       </div>
     </div>
 
-    <!--        <div class="form-check">-->
-    <!--            <input class="form-check-input" type="checkbox" value="" id="use-yt-thumbnail-check"-->
-    <!--                   aria-describedby="thumbnail-help">-->
-    <!--            <label class="form-check-label" for="use-yt-thumbnail-check">-->
-    <!--                Use youtube thumbnail-->
-    <!--            </label>-->
-    <!--            <div id="thumbnail-help" class="form-text">-->
-    <!--                Check if you want to use the video's thumbnail as the song's cover instead of the generated one-->
-    <!--            </div>-->
-    <!--        </div>-->
+    <div class="form-check mb-3">
+      <input class="form-check-input" type="checkbox" value="" id="use-yt-thumbnail-check"
+             aria-describedby="thumbnail-help">
+      <label class="form-check-label" for="use-yt-thumbnail-check">
+        Use youtube thumbnail
+      </label>
+      <div id="thumbnail-help" class="form-text">
+        Check if you want to use the video's thumbnail as the song's cover instead of the generated one
+      </div>
+    </div>
 
-    <input type="image" alt="">
+    <input type="image" alt="" id="cover-tag" hidden value="">
+    <div class="row mb-3">
+      <div class="col">
+        <div class="card d-inline-flex">
+          <div class="card-header">Cover</div>
+          <img alt=" " src="" id="cover-preview-img" class="d-block"
+               style="width: 200px; height: 200px; object-fit: contain;">
+        </div>
+      </div>
+    </div>
 
     <label for="youtube-id" hidden></label><input id="youtube-id" hidden value="">
 
-    <button type="submit" class="btn btn-primary" id="download-form-button">Done</button>
+    <button type="submit" class="btn btn-primary mb-3" id="download-form-button">Done</button>
     <span class="spinner-border spinner-border-sm"
           role="status" aria-hidden="true" id="download-form-spinner" hidden>
         </span>
   </form>
 
-  <br>
-
-  <h3>3. Get link</h3>
+  <h3 class="mb-3">3. Get link</h3>
   <table class="table table-sm table-hover">
-    <thead>
+    <thead class="thead-light">
     <tr>
       <th scope="col">Title</th>
       <th scope="col">Artists</th>
@@ -129,7 +140,11 @@
     </tr>
     </thead>
 
-    <tbody id="song-table"></tbody>
+    <tbody id="song-table">
+    <tr>
+      <td colspan="6">No data available</td>
+    </tr>
+    </tbody>
   </table>
 
   <br>

@@ -17,7 +17,14 @@ function populateForm(json) {
     document.getElementById('artist-tag').value = json['artists'].join(',');
     document.getElementById('album-tag').value = json['album'];
     document.getElementById('youtube-id').value = json['video_id'];
+
+    // TODO: make it possible to choose
     lastThumbnail = json['thumbnail_url'];
+    document.getElementById('cover-tag').value = lastThumbnail;
+    document.getElementById('cover-preview-img').setAttribute('src', lastThumbnail);
+}
+
+function getCoverURI(artistName) {
 }
 
 function trackStatus(request_id) {
@@ -82,7 +89,7 @@ function updateSongTable() {
                 row.insertCell().innerText = song.artists.join(',');
                 row.insertCell().innerText = song.album;
                 const downloadCell = row.insertCell();
-                row.insertCell().innerText = new Date(`${song.created_date}Z`).toLocaleString();
+                row.insertCell().innerText = new Date(`${song['created_date']}Z`).toLocaleString();
                 row.insertCell().innerText = song.tagger === null ? '-' : song.tagger;
 
                 const downloadButton = document.createElement('button');
@@ -91,7 +98,7 @@ function updateSongTable() {
                 downloadButton.classList.add('btn-primary');
                 downloadButton.classList.add('btn-sm');
                 downloadButton.addEventListener('click', () => {
-                    downloadURI(`http://localhost/download/${song.id}`);
+                    downloadURI(`http://${API_HOST}/download/${song.id}`);
                 });
                 downloadCell.appendChild(downloadButton);
             }
