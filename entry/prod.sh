@@ -1,3 +1,4 @@
 #!/bin/sh
 
-uvicorn main:create_app --factory --uds /opt/uvicorn.sock
+mkdir /opt/holotagger
+uvicorn main:create_app --factory --uds /opt/holotagger/uvicorn.sock

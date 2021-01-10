@@ -1,3 +1,4 @@
 #!/bin/sh
 
-uvicorn main:create_app --factory --port 80
+export DEBUG=true
+uvicorn main:create_app --factory --port 8000
