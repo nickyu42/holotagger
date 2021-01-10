@@ -13,4 +13,5 @@ eyeD3==0.9.5
 # API and downloading
 google-api-python-client==1.12.8  # TODO: Replace this with lighter library, e.g. requests
 youtube-dl==2020.12.22
-fastapi[all]==0.63.0 # TODO: Replace with with only fastapi
+fastapi==0.63.0
+uvicorn==0.13.3

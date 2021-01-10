@@ -19,7 +19,7 @@ from sqlalchemy.orm import Session
 from db import db, get_songs, Song, Artist
 from download import Status, download_worker
 from metadata import get_metadata, YoutubeAPI, load_artists, SongMetadata
-from settings import ARTISTS, DOWNLOAD_REQUEST_TTL, COVER_DIR
+from settings import ARTISTS, DOWNLOAD_REQUEST_TTL, COVER_DIR, VERSION, ROOT_URL
 
 
 class MetadataRequest(BaseModel):
@@ -60,7 +60,10 @@ def create_app():
     jobs: cachetools.TTLCache[uuid.UUID, DownloadJob] = \
         cachetools.TTLCache(1_000, DOWNLOAD_REQUEST_TTL)
 
-    app = FastAPI()
+    app = FastAPI(
+        root_path=ROOT_URL,
+        version=VERSION,
+    )
 
     app.add_middleware(
         CORSMiddleware,

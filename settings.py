@@ -5,11 +5,16 @@ from dotenv import load_dotenv
 
 ROOT_PATH = Path('.')
 
+VERSION = 'v0.0.1'
+
 # Load environment variables if they exist
 if (ROOT_PATH / '.env').exists():
     load_dotenv(ROOT_PATH / '.env')
 
 IS_DEBUG = os.environ.get('DEBUG', 'false').lower() == 'true'
+
+# Root url path for if running behind a proxy
+ROOT_URL = '/' if IS_DEBUG else f'/api/{VERSION}'
 
 # Data storage settings
 SONGS_STORAGE = ROOT_PATH / 'data' / 'songs'
