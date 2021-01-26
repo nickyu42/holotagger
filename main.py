@@ -69,8 +69,8 @@ def create_app():
         CORSMiddleware,
         allow_credentials=True,
         allow_origins=['*'],
-        allow_methods=["*"],
-        allow_headers=["*"],
+        allow_methods=['*'],
+        allow_headers=['*'],
     )
 
     async def start_download(uid: uuid.UUID, *args) -> None:
@@ -102,13 +102,7 @@ def create_app():
     async def root():
         return {'status': 'ready'}
 
-    @app.post('/metadata', response_model=SongMetadata)
-    def metadata(req: MetadataRequest):
-        """Guess info about song from given youtube video id"""
-        meta = get_metadata(req.video_id, artists_lookup, artists)
-        return meta.dict()
-
-    @app.get('/songs', response_model=List[Song.Model])
+    @app.get('/songs', response_model=List[Song.SongInfo])
     def songs(limit: Optional[int] = None):
         """Get all tagged songs"""
         s = Session(db)
@@ -119,15 +113,6 @@ def create_app():
             raise
         finally:
             s.close()
-
-    @app.post('/convert', response_model=DownloadJob, status_code=HTTPStatus.ACCEPTED)
-    def convert(req: SongMetadata, background_tasks: BackgroundTasks):
-        """Start download and conversion of song with given metadata in the background"""
-        uid = uuid.uuid4()
-        jobs[uid] = DownloadJob(request_id=uid, status=Status.WAITING)
-        background_tasks.add_task(start_download, uid, req)
-
-        return jobs[uid].dict()
 
     @app.get('/download/{song_id}')
     def download(song_id: int):
@@ -166,6 +151,33 @@ def create_app():
             raise HTTPException(status_code=404, detail=f'Artist with artist_id {artist_id} does not have a cover')
 
         return FileResponse(cover_path.resolve(), media_type='image/jpeg')
+
+    @app.get('/search/artist', response_model=Artist.ArtistInfo)
+    async def search_artist(name: str):
+        s = Session(db)
+
+        # TODO: improve search query
+        artist = s.query(Artist).filter(Artist.name.like(f'%{name}%')).first()
+
+        if artist is None:
+            raise HTTPException(status_code=404, detail=f'Artist with name {name} does not exist')
+
+        return artist.to_model()
+
+    @app.post('/metadata', response_model=SongMetadata)
+    def metadata(req: MetadataRequest):
+        """Guess info about song from given youtube video id"""
+        meta = get_metadata(req.video_id, artists_lookup, artists)
+        return meta.dict()
+
+    @app.post('/convert', response_model=DownloadJob, status_code=HTTPStatus.ACCEPTED)
+    def convert(req: SongMetadata, background_tasks: BackgroundTasks):
+        """Start download and conversion of song with given metadata in the background"""
+        uid = uuid.uuid4()
+        jobs[uid] = DownloadJob(request_id=uid, status=Status.WAITING)
+        background_tasks.add_task(start_download, uid, req)
+
+        return jobs[uid].dict()
 
     @app.websocket('/status/ws/{uid}')
     async def status_ws(uid: uuid.UUID, ws: WebSocket):

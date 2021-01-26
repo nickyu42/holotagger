@@ -1,8 +1,37 @@
 'use strict';
 
-const API_HOST = 'localhost'
+const API_HOST = 'localhost:8000';
+const API_URL = new URL(`http://${API_HOST}`);
+let lastYtThumbnail = null;
 let lastThumbnail = null;
 let isBusy = false;
+
+function get(url) {
+    return fetch(new URL(url, API_URL).toString(), {
+        method: 'GET',
+        mode: 'cors',
+        cache: 'no-cache',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        redirect: 'follow',
+        referrerPolicy: 'no-referrer',
+    });
+}
+
+function post(url, body) {
+    return fetch(new URL(url, API_URL).toString(), {
+        method: 'POST',
+        mode: 'cors',
+        cache: 'no-cache',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        redirect: 'follow',
+        referrerPolicy: 'no-referrer',
+        body: JSON.stringify(body),
+    });
+}
 
 function downloadURI(uri) {
     const link = document.createElement("a");
@@ -18,13 +47,29 @@ function populateForm(json) {
     document.getElementById('album-tag').value = json['album'];
     document.getElementById('youtube-id').value = json['video_id'];
 
-    // TODO: make it possible to choose
-    lastThumbnail = json['thumbnail_url'];
+    if (json['artists'].length > 0) {
+        getCoverURI(json['artists'][0]).then(r => {
+            if (r === null) {
+                lastThumbnail = null;
+            } else {
+                lastThumbnail = new URL(`/cover/${r}`, API_URL);
+            }
+        })
+    }
+
+    lastYtThumbnail = json['thumbnail_url'];
     document.getElementById('cover-tag').value = lastThumbnail;
     document.getElementById('cover-preview-img').setAttribute('src', lastThumbnail);
 }
 
-function getCoverURI(artistName) {
+async function getCoverURI(artistName) {
+    const response = await get(`/search/artist?name=${artistName}`)
+
+    if (response.status === 200) {
+        return (await response.json())['id']
+    }
+
+    return null;
 }
 
 function trackStatus(request_id) {
@@ -63,16 +108,7 @@ function trackStatus(request_id) {
 }
 
 function updateSongTable() {
-    fetch(`http://${API_HOST}/songs`, {
-        method: 'GET',
-        mode: 'cors',
-        cache: 'no-cache',
-        headers: {
-            'Content-Type': 'application/json'
-        },
-        redirect: 'follow',
-        referrerPolicy: 'no-referrer',
-    })
+    get('/songs')
         .then(response => response.json())
         .then(json => {
             const songTable = document.getElementById('song-table');
@@ -98,7 +134,7 @@ function updateSongTable() {
                 downloadButton.classList.add('btn-primary');
                 downloadButton.classList.add('btn-sm');
                 downloadButton.addEventListener('click', () => {
-                    downloadURI(`http://${API_HOST}/download/${song.id}`);
+                    downloadURI(`http://${API_URL}/download/${song.id}`);
                 });
                 downloadCell.appendChild(downloadButton);
             }
@@ -131,17 +167,7 @@ inputForm.addEventListener('submit', ev => {
         return;
     }
 
-    fetch(`http://${API_HOST}/metadata`, {
-        method: 'POST',
-        mode: 'cors',
-        cache: 'no-cache',
-        headers: {
-            'Content-Type': 'application/json'
-        },
-        redirect: 'follow',
-        referrerPolicy: 'no-referrer',
-        body: JSON.stringify({video_id: videoId}),
-    })
+    post('/metadata', {video_id: videoId})
         .then(response => response.json())
         .then(json => populateForm(json))
         .catch((error) => console.error('Error:', error));
@@ -161,17 +187,7 @@ tagForm.addEventListener('submit', ev => {
     };
 
     isBusy = true;
-    fetch(`http://${API_HOST}/convert`, {
-        method: 'POST',
-        mode: 'cors',
-        cache: 'no-cache',
-        headers: {
-            'Content-Type': 'application/json'
-        },
-        redirect: 'follow',
-        referrerPolicy: 'no-referrer',
-        body: JSON.stringify(dlRequest),
-    })
+    post('/convert', dlRequest)
         .then(response => response.json())
         .then(json => trackStatus(json['request_id']))
         .catch((error) => {
@@ -180,27 +196,22 @@ tagForm.addEventListener('submit', ev => {
         });
 });
 
-window.addEventListener('load', function() {
+window.addEventListener('load', function () {
     // Fetch all the forms we want to apply custom Bootstrap validation styles to
     const forms = document.getElementsByClassName('needs-validation');
     // Loop over them and prevent submission
     Array.prototype.filter.call(forms, form => {
-      form.addEventListener('submit', event => {
-        if (form.checkValidity() === false) {
-          event.preventDefault();
-          event.stopPropagation();
-        }
-        form.classList.add('was-validated');
-      }, false);
+        form.addEventListener('submit', event => {
+            if (form.checkValidity() === false) {
+                event.preventDefault();
+                event.stopPropagation();
+            }
+            form.classList.add('was-validated');
+        }, false);
     });
 
     // Check if backend is available
-    fetch(`http://${API_HOST}/`, {
-        mode: 'cors',
-        cache: 'no-cache',
-        redirect: 'follow',
-        referrerPolicy: 'no-referrer',
-    })
+    get('/')
         .then(response => {
             if (response.status !== 200) {
                 document.getElementById('status-alert').hidden = false;

@@ -52,7 +52,7 @@ class Song(Base):
     original_artists = relationship(
         'Artist', secondary=original_artist_association, backref='original_songs')
 
-    class Model(BaseModel):
+    class SongInfo(BaseModel):
         id: int
         title: str
         tagger: Optional[str]
@@ -61,8 +61,8 @@ class Song(Base):
         original_artists: List[str]
         created_date: datetime.datetime
 
-    def to_model(self) -> Model:
-        model = Song.Model(
+    def to_model(self) -> SongInfo:
+        model = Song.SongInfo(
             id=self.id,
             title=self.title,
             artists=[a.name for a in self.artists],
@@ -85,6 +85,22 @@ class Artist(Base):
     id = Column(Integer, primary_key=True)
     name = Column(Text)
     yt_id = Column(Text, nullable=True)
+
+    class ArtistInfo(BaseModel):
+        id: int
+        name: str
+        yt_id: Optional[str]
+
+    def to_model(self) -> ArtistInfo:
+        model = Artist.ArtistInfo(
+            id=self.id,
+            name=self.name,
+        )
+
+        if self.yt_id is not None:
+            model.yt_id = self.yt_id
+
+        return model
 
 
 class Album(Base):
