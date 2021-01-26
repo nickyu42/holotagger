@@ -134,7 +134,7 @@ function updateSongTable() {
                 downloadButton.classList.add('btn-primary');
                 downloadButton.classList.add('btn-sm');
                 downloadButton.addEventListener('click', () => {
-                    downloadURI(`http://${API_URL}/download/${song.id}`);
+                    downloadURI(new URL(`/download/${song.id}`, API_URL).toString());
                 });
                 downloadCell.appendChild(downloadButton);
             }
