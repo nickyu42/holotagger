@@ -5,8 +5,9 @@ ENV PYTHONUNBUFFERED 1
 RUN mkdir /code
 WORKDIR /code
 
-# Install gcc.
-RUN apk add --no-cache --virtual .build-deps gcc musl-dev
+# Install gcc and ffmpeg
+RUN apk add --no-cache ffmpeg
+RUN apk add --no-cache --virtual .build-deps gcc musl-dev 
 
 # Copy all our files into the image.
 COPY requirements.txt requirements.txt
