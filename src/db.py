@@ -1,14 +1,15 @@
+"""
+This module contains the ORM models and crud operations.
+"""
 import datetime
 from pathlib import Path
 from typing import Any, List, Optional, Generator
 
-from pydantic import BaseModel
 from sqlalchemy import create_engine, Column, Integer, Text, Table, ForeignKey, DateTime
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship, Session
 
-import settings
-from metadata import SongMetadata
+from src.schemas import SongMetadata
 
 Base = declarative_base()
 
@@ -52,32 +53,6 @@ class Song(Base):
     original_artists = relationship(
         'Artist', secondary=original_artist_association, backref='original_songs')
 
-    class SongInfo(BaseModel):
-        id: int
-        title: str
-        tagger: Optional[str]
-        album: Optional[str]
-        artists: List[str]
-        original_artists: List[str]
-        created_date: datetime.datetime
-
-    def to_model(self) -> SongInfo:
-        model = Song.SongInfo(
-            id=self.id,
-            title=self.title,
-            artists=[a.name for a in self.artists],
-            original_artists=[a.name for a in self.original_artists],
-            created_date=self.created_date,
-        )
-
-        if self.tagger is not None:
-            model.tagger = self.tagger.name
-
-        if self.album is not None:
-            model.album = self.album.name
-
-        return model
-
 
 class Artist(Base):
     __tablename__ = 'artist'
@@ -85,22 +60,6 @@ class Artist(Base):
     id = Column(Integer, primary_key=True)
     name = Column(Text)
     yt_id = Column(Text, nullable=True)
-
-    class ArtistInfo(BaseModel):
-        id: int
-        name: str
-        yt_id: Optional[str]
-
-    def to_model(self) -> ArtistInfo:
-        model = Artist.ArtistInfo(
-            id=self.id,
-            name=self.name,
-        )
-
-        if self.yt_id is not None:
-            model.yt_id = self.yt_id
-
-        return model
 
 
 class Album(Base):
@@ -126,7 +85,7 @@ def init(db_name: str) -> Any:
     :param db_name: relative path to db file
     :return: db engine
     """
-    engine = create_engine(f'sqlite:///{db_name}')
+    engine = create_engine(f'sqlite:///{db_name}', connect_args={"check_same_thread": False})
     Base.metadata.create_all(engine)
 
     return engine
@@ -195,6 +154,3 @@ def get_songs(session: Session, limit: Optional[int] = None) -> Generator[Song, 
         q = q.limit(limit)
 
     return q.all()
-
-
-db = init(settings.DB)

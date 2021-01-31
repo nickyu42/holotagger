@@ -1,7 +1,7 @@
 import logging
 import os
 import pathlib
-from typing import List, Optional, Dict, Set, Union
+from typing import List, Dict, Set, Union
 from urllib import request
 
 import eyed3
@@ -10,30 +10,11 @@ import googleapiclient.discovery
 import googleapiclient.errors
 import yaml
 from fuzzywuzzy import process
-from pydantic import BaseModel
 
-import settings
+import src.settings as settings
+from src.schemas import SongMetadata, ArtistMetadata
 
 logger = logging.getLogger(__name__)
-
-
-class SongMetadata(BaseModel):
-    # Embedded metadata
-    title: str
-    artists: List[str]
-    album: str
-    original_artists: List[str]
-
-    # Other metadata
-    video_id: str
-    tagger: Optional[str]
-    thumbnail_url: Optional[str]
-
-
-class ArtistMetadata(BaseModel):
-    name: str
-    fuzzy_names: List[str]
-    yt_id: str
 
 
 class YoutubeAPI:
