@@ -1,45 +1,10 @@
 'use strict';
 
-const API_HOST = 'localhost:8000';
-const API_URL = new URL(`http://${API_HOST}`);
+import {BASE_URL, downloadURI, get, post} from "./helpers";
+
 let lastYtThumbnail = null;
 let lastThumbnail = null;
 let isBusy = false;
-
-function get(url) {
-    return fetch(new URL(url, API_URL).toString(), {
-        method: 'GET',
-        mode: 'cors',
-        cache: 'no-cache',
-        headers: {
-            'Content-Type': 'application/json'
-        },
-        redirect: 'follow',
-        referrerPolicy: 'no-referrer',
-    });
-}
-
-function post(url, body) {
-    return fetch(new URL(url, API_URL).toString(), {
-        method: 'POST',
-        mode: 'cors',
-        cache: 'no-cache',
-        headers: {
-            'Content-Type': 'application/json'
-        },
-        redirect: 'follow',
-        referrerPolicy: 'no-referrer',
-        body: JSON.stringify(body),
-    });
-}
-
-function downloadURI(uri) {
-    const link = document.createElement("a");
-    link.href = uri;
-    document.body.appendChild(link);
-    link.click();
-    link.remove();
-}
 
 function populateForm(json) {
     document.getElementById('title-tag').value = json['title'];
@@ -52,7 +17,7 @@ function populateForm(json) {
             if (r === null) {
                 lastThumbnail = null;
             } else {
-                lastThumbnail = new URL(`/cover/${r}`, API_URL);
+                lastThumbnail = new URL(`/cover/${r}`, BASE_URL);
             }
         })
     }
@@ -134,7 +99,7 @@ function updateSongTable() {
                 downloadButton.classList.add('btn-primary');
                 downloadButton.classList.add('btn-sm');
                 downloadButton.addEventListener('click', () => {
-                    downloadURI(new URL(`/download/${song.id}`, API_URL).toString());
+                    downloadURI(new URL(`/download/${song.id}`, BASE_URL).toString());
                 });
                 downloadCell.appendChild(downloadButton);
             }
@@ -196,7 +161,7 @@ tagForm.addEventListener('submit', ev => {
         });
 });
 
-window.addEventListener('load', function () {
+window.addEventListener('DOMContentLoaded', function () {
     // Fetch all the forms we want to apply custom Bootstrap validation styles to
     const forms = document.getElementsByClassName('needs-validation');
     // Loop over them and prevent submission
@@ -210,16 +175,9 @@ window.addEventListener('load', function () {
         }, false);
     });
 
-    // Check if backend is available
-    get('/')
-        .then(response => {
-            if (response.status !== 200) {
-                document.getElementById('status-alert').hidden = false;
-            } else {
-                updateSongTable();
-            }
-        })
-        .catch(_ => {
-            document.getElementById('status-alert').hidden = false;
-        });
+    for (const e of document.getElementsByClassName('date-convert')) {
+        e.innerHTML = new Date(parseFloat(e.innerHTML) * 1000).toLocaleString();
+        e.style.visibility = 'visible';
+    }
 }, false);
+
