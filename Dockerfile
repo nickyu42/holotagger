@@ -18,7 +18,15 @@ ENV PATH="/root/.local/bin:${PATH}"
 RUN pip install --no-cache-dir -Ur requirements.txt \
     && apk del .build-deps
 
-COPY . /code/
+# Copy entrypoint scripts
+COPY entry /code/entry
+
+# Copy static assets
+COPY app/static /code/app/static
+COPY app/templates /code/app/templates
+
+# Copy code
+COPY src /code/src
 
 # Specify the command to run when the image is run.
 CMD ["/code/entry/prod.sh"]

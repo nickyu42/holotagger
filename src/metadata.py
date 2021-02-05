@@ -10,11 +10,22 @@ import googleapiclient.discovery
 import googleapiclient.errors
 import yaml
 from fuzzywuzzy import process
+from pydantic import BaseModel
 
 import src.settings as settings
 from src.schemas import SongMetadata, ArtistMetadata
 
 logger = logging.getLogger(__name__)
+
+
+class YtChannelSnippet(BaseModel):
+    thumbnails: Dict[str, dict]
+
+
+class YtChannelInfo(BaseModel):
+    kind: str
+    id: str
+    snippet: YtChannelSnippet
 
 
 class YoutubeAPI:
@@ -42,15 +53,31 @@ class YoutubeAPI:
 
     @classmethod
     def video_info(cls, video_ids: List[str]) -> list:
-        if cls._youtube is None:
-            cls.init()
-
-        request = cls._youtube.videos().list(
+        response = cls._youtube.videos().list(
             part='snippet',
             id=','.join(video_ids)
-        )
-        response = request.execute()
+        ).execute()
+
         return [i['snippet'] for i in response['items']]
+
+    @classmethod
+    def channel_info(cls, channel_ids: List[str]) -> List[YtChannelInfo]:
+        response = cls._youtube.channels().list(
+            part='snippet',
+            id=','.join(channel_ids)
+        ).execute()
+
+        total = [YtChannelInfo(**item) for item in response['items']]
+
+        while 'nextPageToken' in response:
+            response = cls._youtube.channels().list(
+                part='snippet',
+                id=','.join(channel_ids),
+                pageToken=response['nextPageToken'],
+            ).execute()
+            total.extend(YtChannelInfo(**item) for item in response['items'])
+
+        return total
 
 
 def guess_artist(song_title: str, choices: Dict[str, ArtistMetadata], guess_threshold=80) -> Set[str]:
@@ -105,9 +132,8 @@ def add_metadata(
         with thumbnail.open('rb') as f:
             audio.tag.images.set(3, f.read(), f'image/{thumbnail.suffix}', 'Album Art')
     else:
-        data = request.urlopen(thumbnail).read()
-        # TODO: assumption of image mime type, get it from request
-        audio.tag.images.set(3, data, 'image/jpeg', 'Album Art')
+        response = request.urlopen(thumbnail)
+        audio.tag.images.set(3, response.read(), response.info().get_content_type(), 'Album Art')
     audio.tag.save()
 
 
