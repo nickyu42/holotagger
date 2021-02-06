@@ -10,6 +10,16 @@
         integrity="sha384-giJF6kkoqNQ00vy+HMDP7azOuL0xtbfIcaT9wjKHr8RbDVddVHyTfAAsrekwKmP1" crossorigin="anonymous">
   <link href="{{ url_for('static', path='/style.css') }}" rel="stylesheet" type="text/css">
   <link rel="shortcut icon" href="{{ url_for('static', path='/favicon.ico') }}"/>
+  <script>
+      // TODO: remove this
+      function download(uri) {
+          var link = document.createElement("a");
+          link.href = uri;
+          document.body.appendChild(link);
+          link.click();
+          link.remove();
+      }
+  </script>
 </head>
 
 <body>
@@ -99,17 +109,6 @@
       </div>
     </div>
 
-    <div class="form-check mb-3">
-      <input class="form-check-input" type="checkbox" value="" id="use-yt-thumbnail-check"
-             aria-describedby="thumbnail-help">
-      <label class="form-check-label" for="use-yt-thumbnail-check">
-        Use youtube thumbnail
-      </label>
-      <div id="thumbnail-help" class="form-text">
-        Check if you want to use the video's thumbnail as the song's cover instead of the generated one
-      </div>
-    </div>
-
     <input type="image" alt="" id="cover-tag" hidden value="">
     <div class="row mb-3">
       <div class="col">
@@ -157,7 +156,9 @@
         </td>
         <td>{{ song.album['name'] }}</td>
         <td>
-          <button class="btn btn-primary btn-sm">Download</button>
+          <button class="btn btn-primary btn-sm" onclick="download('{{ url_for('download', song_id=song.id) }}')">
+            Download
+          </button>
         </td>
         <td>
           <span class="date-convert" style="visibility: hidden">

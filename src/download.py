@@ -65,9 +65,7 @@ def download_and_tag(storage_dir: Path, url: str, meta: SongMetadata, db_engine:
 
     song_path = force_mp3(song_path)
 
-    # TODO: remove hardcoded cover
-    add_metadata(song_path, meta,
-                 'https://i1.sndcdn.com/avatars-32EHFzqYhcwAzmuk-mE2q0g-t500x500.jpg')
+    add_metadata(song_path, meta, meta.thumbnail_url)
 
     # Step 3: Add song info to persistence
     # Note: weirdly enough SQLAlchemy 1.3 does not work with the session context manager

@@ -3,7 +3,6 @@
 import {BASE_URL, downloadURI, get, post} from "./helpers";
 
 let lastYtThumbnail = null;
-let lastThumbnail = null;
 let isBusy = false;
 
 function populateForm(json) {
@@ -11,20 +10,9 @@ function populateForm(json) {
     document.getElementById('artist-tag').value = json['artists'].join(',');
     document.getElementById('album-tag').value = json['album'];
     document.getElementById('youtube-id').value = json['video_id'];
-
-    if (json['artists'].length > 0) {
-        getCoverURI(json['artists'][0]).then(r => {
-            if (r === null) {
-                lastThumbnail = null;
-            } else {
-                lastThumbnail = new URL(`/cover/${r}`, BASE_URL);
-            }
-        })
-    }
-
     lastYtThumbnail = json['thumbnail_url'];
-    document.getElementById('cover-tag').value = lastThumbnail;
-    document.getElementById('cover-preview-img').setAttribute('src', lastThumbnail);
+    document.getElementById('cover-tag').value = lastYtThumbnail;
+    document.getElementById('cover-preview-img').setAttribute('src', lastYtThumbnail);
 }
 
 async function getCoverURI(artistName) {
@@ -38,7 +26,14 @@ async function getCoverURI(artistName) {
 }
 
 function trackStatus(request_id) {
-    const ws = new WebSocket(`ws://${API_HOST}/status/ws/${request_id}`);
+    let urlCopy = new URL(BASE_URL.toString());
+    if (BASE_URL.protocol === 'http:') {
+        urlCopy.protocol = 'ws:';
+    } else {
+        urlCopy.protocol = 'wss:';
+    }
+
+    const ws = new WebSocket(`${urlCopy}/status/ws/${request_id}`);
     const formSpinner = document.getElementById('download-form-spinner');
     const downloadButton = document.getElementById('download-form-button');
 
@@ -87,8 +82,8 @@ function updateSongTable() {
 
                 // XXX: Add Z as the given time is in UTC
                 row.insertCell().innerText = song.title;
-                row.insertCell().innerText = song.artists.join(',');
-                row.insertCell().innerText = song.album;
+                row.insertCell().innerText = song.artists.map(a => a['name']).join(',');
+                row.insertCell().innerText = song.album['name'];
                 const downloadCell = row.insertCell();
                 row.insertCell().innerText = new Date(`${song['created_date']}Z`).toLocaleString();
                 row.insertCell().innerText = song.tagger === null ? '-' : song.tagger;
@@ -99,7 +94,7 @@ function updateSongTable() {
                 downloadButton.classList.add('btn-primary');
                 downloadButton.classList.add('btn-sm');
                 downloadButton.addEventListener('click', () => {
-                    downloadURI(new URL(`/download/${song.id}`, BASE_URL).toString());
+                    downloadURI(BASE_URL + `/download/${song.id}`);
                 });
                 downloadCell.appendChild(downloadButton);
             }
@@ -148,7 +143,8 @@ tagForm.addEventListener('submit', ev => {
         'album': document.getElementById('album-tag').value,
         'original_artists': [],
         'tagger': document.getElementById('tagger-tag').value,
-        'video_id': document.getElementById('youtube-id').value
+        'video_id': document.getElementById('youtube-id').value,
+        'thumbnail_url': lastYtThumbnail,
     };
 
     isBusy = true;
