@@ -1,3 +1,14 @@
+FROM node:15.8-alpine as builder
+
+RUN mkdir -p /code/app
+WORKDIR /code/app
+
+COPY app /code
+
+# Build bundle.js
+RUN npm install
+RUN npm run prod
+
 FROM python:3.9.1-alpine
 
 ENV PYTHONUNBUFFERED 1
@@ -24,6 +35,9 @@ COPY entry /code/entry
 # Copy static assets
 COPY app/static /code/app/static
 COPY app/templates /code/app/templates
+COPY --from=builder /code/static/bundle.js /code/app/static/bundle.js
+
+EXPOSE 80
 
 # Copy code
 COPY src /code/src

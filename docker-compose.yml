@@ -1,8 +1,9 @@
 version: "3"
 
 services:
-  api:
+  app:
     build: .
+    container_name: holotagger
     env_file:
       - .env
     init: true

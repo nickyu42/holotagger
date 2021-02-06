@@ -2,9 +2,9 @@
   "name": "holotagger",
   "version": "0.0.1",
   "description": "",
-  "main": "index.ts",
   "scripts": {
-    "build": "babel src -d lib"
+    "prod": "browserify src/main.js -o static/bundle.js -t [ babelify --presets [ @babel/preset-env ] ]",
+    "build": "browserify src/main.js -o static/bundle.js -p esmify --debug"
   },
   "author": "",
   "license": "ISC",

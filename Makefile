@@ -10,13 +10,11 @@ download_covers:
 
 .PHONY: prod
 prod:
-	cd app && \
-		node_modules/.bin/browserify src/main.js -o static/bundle.js -t [ babelify --presets [ @babel/preset-env ] ]
+	cd app && npm run prod
 
 .PHONY: dev
 dev:
-	cd app && \
-		node_modules/.bin/browserify src/main.js -o static/bundle.js -p esmify --debug
+	cd app && npm run build
 
 .PHONY: install
 install:

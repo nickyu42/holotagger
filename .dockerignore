@@ -1,6 +1,5 @@
 .venv/
 .env
 app/ff/
-app/src/
 node_modules/
 data/
