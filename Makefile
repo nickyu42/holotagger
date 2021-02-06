@@ -1,4 +1,4 @@
-all:
+all: prod
 
 .PHONY: requirements.txt
 requirements.txt:
@@ -8,13 +8,13 @@ requirements.txt:
 download_covers:
 	entry/scripts/download_yt_thumbnails.py
 
-.PHONY: build_web
-build_web:
+.PHONY: prod
+prod:
 	cd app && \
 		node_modules/.bin/browserify src/main.js -o static/bundle.js -t [ babelify --presets [ @babel/preset-env ] ]
 
-.PHONY: build_dev
-build_dev:
+.PHONY: dev
+dev:
 	cd app && \
 		node_modules/.bin/browserify src/main.js -o static/bundle.js -p esmify --debug
 
