@@ -1,7 +1,7 @@
 import datetime
 import uuid
 from enum import Enum
-from typing import List, Callable, Optional, TYPE_CHECKING
+from typing import List, Callable, Optional
 
 from pydantic import BaseModel, PrivateAttr, validator
 from sqlalchemy.orm import Query

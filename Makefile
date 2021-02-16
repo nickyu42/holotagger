@@ -20,6 +20,10 @@ dev:
 install:
 	cd app && npm install
 
+.PHONY: lint
+lint:
+	poetry run flake8 src
+
 .PHONY: clean
 clean:
 	rm -f app/static/bundle.js
