@@ -1,12 +1,17 @@
 FROM node:15.8-alpine as builder
 
-RUN mkdir -p /code/app
-WORKDIR /code/app
+RUN mkdir -p /code
+WORKDIR /code
 
-COPY app /code
+COPY app/package.json /code
+COPY app/package-lock.json /code
+
+RUN npm install
+
+# Copy sources to build
+COPY app /code/
 
 # Build bundle.js
-RUN npm install
 RUN npm run prod
 
 FROM python:3.9.1-alpine
@@ -20,7 +25,6 @@ WORKDIR /code
 RUN apk add --no-cache ffmpeg
 RUN apk add --no-cache --virtual .build-deps gcc musl-dev 
 
-# Copy all our files into the image.
 COPY requirements.txt requirements.txt
 
 ENV PATH="/root/.local/bin:${PATH}"
