@@ -56,6 +56,10 @@ class MetadataRequest(BaseModel):
     video_id: str
 
 
+class Tagger(OrmBase):
+    name: str
+
+
 class Album(OrmBase):
     name: str
 
@@ -67,7 +71,7 @@ class Artist(OrmBase):
 
 class Song(OrmBase):
     title: str
-    tagger: Optional[str]
+    tagger: Optional[Tagger]
     album: Optional[Album]
     artists: List[Artist]
     original_artists: List[str]

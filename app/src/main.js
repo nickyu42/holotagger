@@ -86,7 +86,7 @@ function updateSongTable() {
                 row.insertCell().innerText = song.album['name'];
                 const downloadCell = row.insertCell();
                 row.insertCell().innerText = new Date(`${song['created_date']}Z`).toLocaleString();
-                row.insertCell().innerText = song.tagger === null ? '-' : song.tagger;
+                row.insertCell().innerText = song.tagger === null ? '-' : song.tagger.name;
 
                 const downloadButton = document.createElement('button');
                 downloadButton.innerText = 'Download';
