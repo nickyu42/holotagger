@@ -1,5 +1,4 @@
 import logging
-from enum import Enum
 from pathlib import Path
 from typing import List, Any, Optional
 
@@ -7,18 +6,13 @@ import youtube_dl
 from slugify import slugify
 from sqlalchemy.orm import Session
 
-import settings
-from db import add_song, db
-from metadata import SongMetadata, add_metadata, force_mp3
+import src.settings as settings
+from src.db import add_song
+from src.dependencies import engine
+from src.metadata import add_metadata, force_mp3
+from src.schemas import SongMetadata
 
 logger = logging.getLogger(__name__)
-
-
-class Status(Enum):
-    WAITING = 'waiting'
-    DOWNLOADING = 'downloading'
-    DONE = 'done'
-    ERROR = 'error'
 
 
 def init_ydl_options(output_dir: Path, song_title: str, hooks: list) -> dict:
@@ -71,9 +65,7 @@ def download_and_tag(storage_dir: Path, url: str, meta: SongMetadata, db_engine:
 
     song_path = force_mp3(song_path)
 
-    # TODO: remove hardcoded cover
-    add_metadata(song_path, meta,
-                 'https://i1.sndcdn.com/avatars-32EHFzqYhcwAzmuk-mE2q0g-t500x500.jpg')
+    add_metadata(song_path, meta, meta.thumbnail_url)
 
     # Step 3: Add song info to persistence
     # Note: weirdly enough SQLAlchemy 1.3 does not work with the session context manager
@@ -92,4 +84,4 @@ def download_and_tag(storage_dir: Path, url: str, meta: SongMetadata, db_engine:
 def download_worker(req: SongMetadata):
     logging.info(f'Worker started on {req.title}')
     url = f'http://youtube.com/watch?v={req.video_id}'
-    download_and_tag(settings.SONGS_STORAGE, url, req, db)
+    download_and_tag(settings.SONGS_STORAGE, url, req, engine)

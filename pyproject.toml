@@ -1,0 +1,36 @@
+[tool.poetry]
+name = "holotagger"
+version = "0.0.1"
+description = "API for downloading and tagging Hololive karaoke covers"
+authors = ["Nick Yu <nickyu42@gmail.com>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.9"
+
+# Misc
+PyYAML = "^5.4.1"
+python-dotenv = "^0.15.0"
+SQLAlchemy = "^1.3.22"
+python-slugify = "^4.0.1"
+
+# Song analysis and processing
+ffmpeg-python = "^0.2.0"
+python-Levenshtein = "^0.12.1"
+fuzzywuzzy = "^0.18.0"
+eyed3 = "^0.9.6"
+
+# API and downloading
+google-api-python-client = "^1.12.8"
+youtube_dl = "^2021.1.24"
+fastapi = "^0.63.0"
+uvicorn = "^0.13.3"
+aiofiles = "^0.6.0"
+websockets = "^8.1"
+Jinja2 = "^2.11.3"
+
+[tool.poetry.dev-dependencies]
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"

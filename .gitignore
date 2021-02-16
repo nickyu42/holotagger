@@ -4,3 +4,5 @@ data/songs/
 __pycache__/
 *.sqlite
 .env
+node_modules/
+bundle.js

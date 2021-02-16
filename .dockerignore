@@ -1,3 +1,5 @@
-venv/
-app/
-.env/
+.venv/
+.env
+app/ff/
+node_modules/
+data/
