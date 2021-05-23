@@ -14,7 +14,7 @@ COPY app /code/
 # Build bundle.js
 RUN npm run prod
 
-FROM python:3.9.1-alpine
+FROM python:3.9.5-alpine
 
 ENV PYTHONUNBUFFERED 1
 
@@ -23,7 +23,7 @@ WORKDIR /code
 
 # Install gcc and ffmpeg
 RUN apk add --no-cache ffmpeg
-RUN apk add --no-cache --virtual .build-deps gcc musl-dev 
+RUN apk add --no-cache --virtual .build-deps gcc musl-dev build-base
 
 COPY requirements.txt requirements.txt
 
