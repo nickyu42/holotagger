@@ -22,7 +22,7 @@ eyed3 = "^0.9.6"
 
 # API and downloading
 google-api-python-client = "^1.12.8"
-youtube_dl = "^2021.1.24"
+youtube_dl = "^2021.5.16"
 fastapi = "^0.63.0"
 uvicorn = "^0.13.3"
 aiofiles = "^0.6.0"

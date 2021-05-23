@@ -47,7 +47,7 @@ class YoutubeAPI:
 
             # Get credentials and create an API client
             cls._youtube = googleapiclient.discovery.build(cls._API_SERVICE_NAME, cls._API_VERSION, developerKey=key)
-            logging.info('Created Youtube API Resource')
+            logger.info('Created Youtube API Resource')
 
         return cls._youtube
 

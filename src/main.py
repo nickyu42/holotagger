@@ -19,13 +19,6 @@ from src.settings import VERSION, API_URL
 
 
 def create_app() -> FastAPI:
-    # Setup logging
-    logger = logging.getLogger(__name__)
-
-    handler = logging.StreamHandler(sys.stdout)
-    handler.setLevel(logging.DEBUG)
-    logger.addHandler(handler)
-
     app = FastAPI(
         version=VERSION,
     )
