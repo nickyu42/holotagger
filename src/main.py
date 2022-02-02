@@ -1,9 +1,8 @@
 import logging
-import sys
-from concurrent.futures.process import ProcessPoolExecutor
+from concurrent.futures import ThreadPoolExecutor
 from datetime import timezone
 
-from fastapi import FastAPI, Depends
+from fastapi import Depends, FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
 from starlette.requests import Request
@@ -15,10 +14,12 @@ from src.db import get_songs
 from src.dependencies import engine, get_db
 from src.metadata import YoutubeAPI
 from src.routers import data, download
-from src.settings import VERSION, API_URL
+from src.settings import API_URL, LOGGING_CONFIG, VERSION
 
 
 def create_app() -> FastAPI:
+    logging.config.fileConfig(LOGGING_CONFIG, disable_existing_loggers=False)  # noqa
+
     app = FastAPI(
         version=VERSION,
     )
@@ -37,7 +38,8 @@ def create_app() -> FastAPI:
     @app.on_event('startup')
     def startup():
         YoutubeAPI.init()
-        app.state.executor = ProcessPoolExecutor()
+        # TODO: use process pool, but share 'jobs' object
+        app.state.executor = ThreadPoolExecutor()
 
     @app.on_event('shutdown')
     def shutdown_event():

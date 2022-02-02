@@ -1,10 +1,13 @@
 import datetime
+import logging
 import uuid
 from enum import Enum
-from typing import List, Callable, Optional
+from typing import Callable, List, Optional
 
 from pydantic import BaseModel, PrivateAttr, validator
 from sqlalchemy.orm import Query
+
+logger = logging.getLogger(__name__)
 
 
 class OrmBase(BaseModel):
@@ -34,6 +37,8 @@ class Status(Enum):
 class DownloadJob(BaseModel):
     request_id: uuid.UUID
     status: Status
+    percentage_done: float
+    last_update: float
 
     _observers: List[Callable] = PrivateAttr(default_factory=list)
 
@@ -42,6 +47,7 @@ class DownloadJob(BaseModel):
             await o(self)
 
     def listen(self, o: Callable):
+        logger.debug('Added listener to job %s', self)
         self._observers.append(o)
 
     def remove_observer(self, o: Callable):

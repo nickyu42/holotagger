@@ -36,13 +36,19 @@ function trackStatus(request_id) {
     const ws = new WebSocket(`${urlCopy}/status/ws/${request_id}`);
     const formSpinner = document.getElementById('download-form-spinner');
     const downloadButton = document.getElementById('download-form-button');
+    const progressBar = document.getElementById('download-progress-bar');
 
     formSpinner.hidden = false;
     downloadButton.disabled = true;
 
     ws.addEventListener('message', function (event) {
-        const status = JSON.parse(event.data)['status'];
+        const jobStatus = JSON.parse(event.data);
+        console.log(jobStatus)
+        const status = jobStatus['status'];
+        const percentageDone = Math.round(jobStatus['percentage_done'] * 100);
         downloadButton.innerText = status.charAt(0).toUpperCase() + status.slice(1);
+        progressBar.innerText = `${percentageDone}%`;
+
         switch (status) {
             case 'done':
                 formSpinner.hidden = true;
@@ -52,7 +58,8 @@ function trackStatus(request_id) {
                 break;
 
             case 'downloading':
-                downloadButton.innerText = 'Converting';
+                downloadButton.innerText = 'Downloading video';
+                progressBar.style.width = `${percentageDone}%`
                 break;
 
             case 'error':
@@ -103,7 +110,7 @@ function updateSongTable() {
 }
 
 const inputForm = document.getElementById('input-form');
-inputForm.addEventListener('submit', ev => {
+inputForm.addEventListener('submit', (ev) => {
     ev.preventDefault();
 
     // Check if download is not busy
@@ -127,7 +134,7 @@ inputForm.addEventListener('submit', ev => {
         return;
     }
 
-    post('/metadata', {video_id: videoId})
+    const response = post('/metadata', {video_id: videoId})
         .then(response => response.json())
         .then(json => populateForm(json))
         .catch((error) => console.error('Error:', error));

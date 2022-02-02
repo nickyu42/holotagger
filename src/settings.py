@@ -13,6 +13,9 @@ if (ROOT_PATH / '.env').exists():
 
 IS_DEBUG = os.environ.get('DEBUG', 'false').lower() == 'true'
 
+# Logging configuration file
+LOGGING_CONFIG = ROOT_PATH / 'entry' / 'logging.conf'
+
 # Root url path for if running behind a proxy
 API_URL = f'/api/{VERSION}'
 
