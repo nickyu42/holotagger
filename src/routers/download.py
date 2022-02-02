@@ -42,7 +42,7 @@ async def status(uid: uuid.UUID):
 def convert(req: SongMetadata, background_tasks: BackgroundTasks, request: Request):
     """Start download and conversion of song with given metadata in the background"""
     uid = uuid.uuid4()
-    jobs[uid] = DownloadJob(request_id=uid, status=Status.WAITING)
+    jobs[uid] = DownloadJob(request_id=uid, status=Status.WAITING, percentage_done=0.0, last_update=time.time())
     background_tasks.add_task(start_download, request.app.state.executor, uid, req)
 
     return jobs[uid].dict()

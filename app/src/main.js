@@ -41,8 +41,10 @@ function trackStatus(request_id) {
     downloadButton.disabled = true;
 
     ws.addEventListener('message', function (event) {
-        const status = JSON.parse(event.data)['status'];
+        const json = JSON.parse(event.data);
+        const status = json['status'];
         downloadButton.innerText = status.charAt(0).toUpperCase() + status.slice(1);
+
         switch (status) {
             case 'done':
                 formSpinner.hidden = true;

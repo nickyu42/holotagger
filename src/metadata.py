@@ -1,7 +1,7 @@
 import logging
 import os
 import pathlib
-from typing import List, Dict, Set, Union
+from typing import Dict, List, Set, Union
 from urllib import request
 
 import eyed3
@@ -13,7 +13,7 @@ from fuzzywuzzy import process
 from pydantic import BaseModel
 
 import src.settings as settings
-from src.schemas import SongMetadata, ArtistMetadata
+from src.schemas import ArtistMetadata, SongMetadata
 
 logger = logging.getLogger(__name__)
 
@@ -46,7 +46,13 @@ class YoutubeAPI:
                 os.environ["OAUTHLIB_INSECURE_TRANSPORT"] = "1"
 
             # Get credentials and create an API client
-            cls._youtube = googleapiclient.discovery.build(cls._API_SERVICE_NAME, cls._API_VERSION, developerKey=key)
+            cls._youtube = googleapiclient.discovery.build(
+                cls._API_SERVICE_NAME,
+                cls._API_VERSION,
+                developerKey=key,
+                cache_discovery=False
+            )
+
             logger.info('Created Youtube API Resource')
 
         return cls._youtube
@@ -110,9 +116,9 @@ def get_metadata(video_id: str, choices: dict, artists: List[ArtistMetadata]) ->
 
 
 def add_metadata(
-        song_file: pathlib.Path,
-        meta: SongMetadata,
-        thumbnail: Union[pathlib.Path, str],
+    song_file: pathlib.Path,
+    meta: SongMetadata,
+    thumbnail: Union[pathlib.Path, str],
 ):
     """
     Add ID3 metadata to mp3 file.
