@@ -15,6 +15,14 @@ from pydantic import BaseModel
 import src.settings as settings
 from src.schemas import ArtistMetadata, SongMetadata
 
+
+PREFERRED_THUMBNAIL_RES = [
+    'maxres',
+    'high',
+    'medium',
+    'default',
+]
+
 logger = logging.getLogger(__name__)
 
 
@@ -104,6 +112,14 @@ def get_metadata(video_id: str, choices: dict, artists: List[ArtistMetadata]) ->
 
     guessed_artists |= guess_artist(title, choices)
 
+    for res in PREFERRED_THUMBNAIL_RES:
+        if res in response['thumbnails']:
+            thumbnail_url = response['thumbnails'][res]['url']
+            break
+    else:
+        # XXX: This should never be triggered, unless the 'default' key is missing
+        raise RuntimeError(f'Youtube response is missing default thumbnail url: {response["thumbnails"]}')
+
     return SongMetadata(
         title=title,
         artists=list(guessed_artists),
@@ -111,7 +127,7 @@ def get_metadata(video_id: str, choices: dict, artists: List[ArtistMetadata]) ->
         original_artists=[],
         video_id=video_id,
         tagger=None,
-        thumbnail_url=response['thumbnails']['maxres']['url'],
+        thumbnail_url=thumbnail_url,
     )
 
 
