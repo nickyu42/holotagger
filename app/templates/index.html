@@ -72,7 +72,7 @@
              placeholder="Youtube Link">
       <div id="youtube-help" class="form-text">For example: https://www.youtube.com/watch?v=pFgUluV_00s</div>
     </div>
-    <button type="submit" class="btn btn-primary mb-3">Get metadata</button>
+    <button type="submit" class="btn btn-primary mb-3" id="get-metadata-btn">Get metadata</button>
   </form>
 
   <h3 class="mb-3">2. Tag the song</h3>
@@ -131,62 +131,70 @@
     <span class="spinner-border spinner-border-sm"
           role="status" aria-hidden="true" id="download-form-spinner" hidden>
         </span>
+
+    <div class="progress mb-3">
+      <div id="download-progress-bar" class="progress-bar" role="progressbar"
+           aria-valuemin="0" aria-valuemax="100" style="width:0">
+      </div>
+    </div>
   </form>
 
   <h3 class="mb-3">3. Get link</h3>
-  <table class="table table-sm table-hover">
-    <thead class="thead-light">
-    <tr>
-      <th scope="col">Title</th>
-      <th scope="col">Artists</th>
-      <th scope="col">Album</th>
-      <th scope="col">Link</th>
-      <th scope="col">Tagged on</th>
-      <th scope="col">Tagged by</th>
-    </tr>
-    </thead>
-
-    <tbody id="song-table">
-
-    {% for song in songs %}
+  <div class="overflow-scroll" style="max-height: 800px">
+    <table class="table table-sm table-hover">
+      <thead class="thead-light">
       <tr>
-        <td>{{ song.title }}</td>
-        <td>
-          {% for artist in song.artists %}
-            {{ artist['name'] }}
-            {% if not loop.last %}
-              ,
-            {% endif %}
-          {% endfor %}
-        </td>
-        <td>{{ song.album['name'] }}</td>
-        <td>
-          <button class="btn btn-primary btn-sm" onclick="download('{{ url_for('download', song_id=song.id) }}')">
-            Download
-          </button>
-        </td>
-        <td>
+        <th scope="col">Title</th>
+        <th scope="col">Artists</th>
+        <th scope="col">Album</th>
+        <th scope="col">Link</th>
+        <th scope="col">Tagged on</th>
+        <th scope="col">Tagged by</th>
+      </tr>
+      </thead>
+
+      <tbody id="song-table">
+
+      {% for song in songs %}
+        <tr>
+          <td>{{ song.title }}</td>
+          <td>
+            {% for artist in song.artists %}
+              {{ artist['name'] }}
+              {% if not loop.last %}
+                ,
+              {% endif %}
+            {% endfor %}
+          </td>
+          <td>{{ song.album['name'] }}</td>
+          <td>
+            <button class="btn btn-primary btn-sm" onclick="download('{{ url_for('download', song_id=song.id) }}')">
+              Download
+            </button>
+          </td>
+          <td>
           <span class="date-convert" style="visibility: hidden">
             {{ song.created_date.replace(tzinfo=timezone.utc).timestamp() }}
           </span>
-        </td>
-        <td>
-          {% if song.tagger is not none %}
-            {{ song.tagger.name }}
-          {% else %}
-            -
-          {% endif %}
-        </td>
-      </tr>
-    {% endfor %}
+          </td>
+          <td>
+            {% if song.tagger is not none %}
+              {{ song.tagger.name }}
+            {% else %}
+              -
+            {% endif %}
+          </td>
+        </tr>
+      {% endfor %}
 
-    </tbody>
-  </table>
+      </tbody>
+    </table>
+  </div>
 
   <br>
 
   <p class="text-center"><small>
-    v0.0.1 - Contact <a href="https://github.com/nickyu42">njkyu</a> for feature requests
+    v0.0.2 - Contact <a href="https://github.com/nickyu42">njkyu</a> for feature requests
   </small></p>
 </main>
 
