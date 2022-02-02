@@ -1,5 +1,6 @@
 import asyncio
 import logging
+import time
 import uuid
 from pathlib import Path
 from typing import Any
@@ -92,6 +93,7 @@ def create_download_hook(job):
         total_bytes = response['total_bytes']
         downloaded_bytes = response['downloaded_bytes']
         job.percentage_done = downloaded_bytes / total_bytes
+        job.last_update = time.time()
 
         loop = asyncio.get_event_loop()
         loop.run_until_complete(job.notify())

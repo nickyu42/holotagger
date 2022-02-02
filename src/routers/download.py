@@ -55,7 +55,6 @@ async def status_ws(uid: uuid.UUID, ws: WebSocket):
     async def notifier(j: DownloadJob):
         await ws.send_text(j.json())
 
-    start = time.time()
     job = jobs[uid]
     job.listen(notifier)
 
@@ -63,7 +62,7 @@ async def status_ws(uid: uuid.UUID, ws: WebSocket):
 
     while job.status == Status.DOWNLOADING or job.status == Status.WAITING:
         # Send error on timeout
-        if time.time() - start > 60:
+        if time.time() - job.last_update > 60:
             job.remove_observer(notifier)
             # copy job so we don't modify the original
             jc = copy.deepcopy(job)
@@ -71,6 +70,6 @@ async def status_ws(uid: uuid.UUID, ws: WebSocket):
             await ws.send_text(jc.json())
             break
 
-        await asyncio.sleep(0.1)
+        await asyncio.sleep(0.5)
 
     await ws.close()
