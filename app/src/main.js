@@ -73,6 +73,7 @@ function trackStatus(request_id) {
     const ws = new WebSocket(`${urlCopy}/status/ws/${request_id}`);
     const formSpinner = document.getElementById('download-form-spinner');
     const downloadButton = document.getElementById('download-form-button');
+    const downloadButtonText = document.getElementById('download-form-button-text');
     const progressBar = document.getElementById('download-progress-bar');
 
     formSpinner.hidden = false;
@@ -82,7 +83,7 @@ function trackStatus(request_id) {
         const jobStatus = JSON.parse(event.data);
         const status = jobStatus['status'];
         const percentageDone = Math.round(jobStatus['percentage_done'] * 100);
-        downloadButton.innerText = status.charAt(0).toUpperCase() + status.slice(1);
+        downloadButtonText.innerText = status.charAt(0).toUpperCase() + status.slice(1);
         progressBar.innerText = `${percentageDone}%`;
 
         switch (status) {
@@ -94,8 +95,12 @@ function trackStatus(request_id) {
                 break;
 
             case 'downloading':
-                downloadButton.innerText = 'Downloading video';
+                downloadButtonText.innerText = 'Downloading video';
                 progressBar.style.width = `${percentageDone}%`
+                break;
+
+            case 'converting':
+                downloadButtonText.innerText = 'Extracting audio';
                 break;
 
             case 'error':

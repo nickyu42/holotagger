@@ -87,7 +87,11 @@ def download_and_tag(storage_dir: Path, url: str, meta: SongMetadata, db_engine:
 
 def create_download_hook(job):
     def download_hook(response):
-        if response['status'] == 'finished':
+        loop = asyncio.get_event_loop()
+
+        if response['status'] == 'finished' or response['total_bytes'] == response['downloaded_bytes']:
+            job.status = Status.CONVERTING
+            loop.run_until_complete(job.notify())
             return
 
         total_bytes = response['total_bytes']
@@ -95,7 +99,6 @@ def create_download_hook(job):
         job.percentage_done = downloaded_bytes / total_bytes
         job.last_update = time.time()
 
-        loop = asyncio.get_event_loop()
         loop.run_until_complete(job.notify())
 
     return download_hook

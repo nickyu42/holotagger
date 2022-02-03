@@ -30,6 +30,7 @@ class OrmBase(BaseModel):
 class Status(Enum):
     WAITING = 'waiting'
     DOWNLOADING = 'downloading'
+    CONVERTING = 'converting'
     DONE = 'done'
     ERROR = 'error'
 
@@ -99,7 +100,7 @@ class ArtistMetadata(BaseModel):
 class SongMetadata(BaseModel):
     # Embedded metadata
     title: str
-    artists: list[tuple[ArtistMetadata, int]]
+    artists: list[tuple[ArtistMetadata, int]] | list[str]
     album: str
     original_artists: list[str]
 

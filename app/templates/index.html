@@ -102,7 +102,8 @@
     <div class="mb-3 row visually-hidden" id="artist-suggestions-div">
       <div class="col-6"></div>
       <div class="col-6">
-        Suggestions: <div class="d-inline" id="artist-suggestions"></div>
+        Suggestions:
+        <div class="d-inline" id="artist-suggestions"></div>
       </div>
     </div>
 
@@ -134,7 +135,13 @@
 
     <label for="youtube-id" hidden></label><input id="youtube-id" hidden value="">
 
-    <button type="submit" class="btn btn-primary mb-3" id="download-form-button">Done</button>
+    <button type="submit" class="btn btn-primary mb-3" id="download-form-button">
+      <span id="download-form-button-text">Done</span>
+
+      <span class="spinner-border spinner-border-sm"
+            role="status" aria-hidden="true" id="download-form-spinner" hidden>
+      </span>
+    </button>
     <span class="spinner-border spinner-border-sm"
           role="status" aria-hidden="true" id="download-form-spinner" hidden>
         </span>
