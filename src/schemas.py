@@ -84,20 +84,26 @@ class Song(OrmBase):
     created_date: datetime.datetime
 
 
-class SongMetadata(BaseModel):
-    # Embedded metadata
-    title: str
-    artists: List[str]
-    album: str
-    original_artists: List[str]
-
-    # Other metadata
-    video_id: str
-    tagger: Optional[str]
-    thumbnail_url: Optional[str]
+class ArtistAccount(BaseModel):
+    id: str
+    type: str
+    platform: str
 
 
 class ArtistMetadata(BaseModel):
     name: str
-    fuzzy_names: List[str]
-    yt_id: str
+    alternative_names: List[str]
+    accounts: List[ArtistAccount]
+
+
+class SongMetadata(BaseModel):
+    # Embedded metadata
+    title: str
+    artists: list[tuple[ArtistMetadata, int]]
+    album: str
+    original_artists: list[str]
+
+    # Other metadata
+    video_id: str
+    tagger: str | None
+    thumbnail_url: str | None

@@ -1,20 +1,22 @@
+import json
 import logging
 import os
 import pathlib
-from typing import Dict, List, Set, Union
+import warnings
+from typing import Dict, List, Union
 from urllib import request
 
 import eyed3
 import ffmpeg
 import googleapiclient.discovery
 import googleapiclient.errors
+import pykakasi
 import yaml
 from fuzzywuzzy import process
 from pydantic import BaseModel
 
 import src.settings as settings
-from src.schemas import ArtistMetadata, SongMetadata
-
+from src.schemas import ArtistAccount, ArtistMetadata, SongMetadata
 
 PREFERRED_THUMBNAIL_RES = [
     'maxres',
@@ -94,24 +96,40 @@ class YoutubeAPI:
         return total
 
 
-def guess_artist(song_title: str, choices: Dict[str, ArtistMetadata], guess_threshold=80) -> Set[str]:
-    bests = process.extractBests(song_title, tuple(choices.keys()), score_cutoff=guess_threshold)
-    return set(choices[t[0]].name for t in bests)
+def guess_artist(song_title: str, artist_names: list,
+                 artist_lookup: dict[str, ArtistMetadata], guess_threshold=80) -> dict[str, tuple[ArtistMetadata, int]]:
+    bests = process.extractBests(song_title, artist_names, score_cutoff=guess_threshold)
+    logger.debug('guessed based on title: %s', bests)
+
+    guessed_artists = {}
+    for choice, score in bests:
+        artist = artist_lookup[choice]
+        guessed_artists[artist.name] = (artist, score)
+
+    return guessed_artists
 
 
-def get_metadata(video_id: str, choices: dict, artists: List[ArtistMetadata]) -> SongMetadata:
+def get_metadata(video_id: str, artist_names: list, artist_lookup: dict,
+                 yt_lookup: dict[str, ArtistMetadata]) -> SongMetadata:
     response = YoutubeAPI.video_info([video_id])[0]
 
     title = response['title']
+    channel_id = response['channelId']
 
-    guessed_artists = set()
+    logger.debug('guessing artist based on yt_id')
+    guessed_artists: dict[str, tuple[ArtistMetadata, int]] = {}
 
-    for a in artists:
-        if a.yt_id == response['channelId']:
-            guessed_artists.add(a.name)
+    if channel_id in yt_lookup:
+        artist = yt_lookup[channel_id]
+        logger.debug('guessed %s from yt_id', artist.name)
+        guessed_artists[artist.name] = (artist, 100)
 
-    guessed_artists |= guess_artist(title, choices)
+    logger.debug('guessing artist using fuzzy matching')
+    guessed_artists.update(guess_artist(title, artist_names, artist_lookup))
 
+    artists = sorted(guessed_artists.values(), key=lambda a: a[1], reverse=True)
+
+    # Get thumbnail from video
     for res in PREFERRED_THUMBNAIL_RES:
         if res in response['thumbnails']:
             thumbnail_url = response['thumbnails'][res]['url']
@@ -122,7 +140,7 @@ def get_metadata(video_id: str, choices: dict, artists: List[ArtistMetadata]) ->
 
     return SongMetadata(
         title=title,
-        artists=list(guessed_artists),
+        artists=artists,
         album='Vtuber Covers',
         original_artists=[],
         video_id=video_id,
@@ -148,7 +166,7 @@ def add_metadata(
     audio = eyed3.load(song_file.resolve())
 
     audio.tag.title = meta.title
-    audio.tag.artist = ','.join(meta.artists)
+    audio.tag.artist = ','.join(a[0] for a in meta.artists)
     audio.tag.album = meta.album
     if isinstance(thumbnail, pathlib.Path):
         with thumbnail.open('rb') as f:
@@ -188,6 +206,8 @@ def force_mp3(song: pathlib.Path) -> pathlib.Path:
 
 
 def load_artists(artists_file: pathlib.Path) -> (List[ArtistMetadata], Dict[str, ArtistMetadata]):
+    warnings.warn('load_artists should not be used anymore', DeprecationWarning, stacklevel=2)
+
     with artists_file.open('r', encoding='utf8') as f:
         groups = yaml.load(f, Loader=yaml.FullLoader)
 
@@ -211,3 +231,63 @@ def load_artists(artists_file: pathlib.Path) -> (List[ArtistMetadata], Dict[str,
                 artist_lookup[n] = created_artist
 
     return artists, artist_lookup
+
+
+def load_vdb_artists(
+    artists_file: pathlib.Path
+) -> (list[str], dict[str, ArtistMetadata], dict[str, ArtistMetadata]):
+    """
+    Loads the virtual youtubers database from a JSON file and processes it
+    to objects used for metadata matching.
+
+    - Filter by 'vtuber' type
+    - Extracts all youtube channel IDs
+    - Converts jp to romaiji for some names
+    - Creates lookups for fast matching
+    """
+    with artists_file.open('r', encoding='utf8') as f:
+        vbd = json.load(f)
+
+    # Optimization: also create a list of all artist names, this is so we do not
+    # need to get the list from the lookup when doing fuzzymatching
+    artists = []
+    artist_lookup = {}
+    yt_lookup = {}
+
+    # For converting jp to romaiji
+    kks = pykakasi.kakasi()
+
+    for artist in filter(lambda v: v['type'] == 'vtuber', vbd['vtbs']):
+        default_name_lang = artist['name']['default']
+        default_name = artist['name'][default_name_lang]
+
+        all_names: dict = artist['name']
+        extras = all_names.pop('extra')
+        names = list(all_names.values())
+        names.extend(extras)
+        names.remove(default_name)
+        names.remove(default_name_lang)
+
+        if 'jp' in all_names and 'en' not in all_names:
+            romaiji_words = kks.convert(all_names['jp'])
+            romaiji_name = ' '.join(w['hepburn'] for w in romaiji_words)
+            names.append(romaiji_name)
+
+        created_artist = ArtistMetadata(
+            name=default_name,
+            alternative_names=names,
+            accounts=[ArtistAccount(**a) for a in artist['accounts']],
+        )
+
+        for acc in created_artist.accounts:
+            if acc.platform == 'youtube':
+                yt_lookup[acc.id] = created_artist
+
+        artists.append(default_name)
+        artist_lookup[default_name] = created_artist
+
+        for name in names:
+            artists.append(name)
+            artist_lookup[name] = created_artist
+
+    return artists, artist_lookup, yt_lookup

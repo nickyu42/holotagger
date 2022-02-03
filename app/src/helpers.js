@@ -1,5 +1,3 @@
-'use strict'
-
 /**
  * Base URL for all requests.
  * @type {URL}

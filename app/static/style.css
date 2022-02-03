@@ -2,3 +2,12 @@
     font-family: chicago;
     src: url('ChicagoFLF.ttf') format('truetype')
 }
+
+.suggestion-link {
+    color: blue;
+    display: inline;
+}
+
+.suggestion-link:hover {
+    text-decoration: underline;
+}

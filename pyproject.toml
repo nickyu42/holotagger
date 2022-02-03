@@ -19,6 +19,7 @@ ffmpeg-python = "^0.2.0"
 python-Levenshtein = "^0.12.1"
 fuzzywuzzy = "^0.18.0"
 eyed3 = "^0.9.6"
+pykakasi = "^2.2.1"
 
 # API and downloading
 google-api-python-client = "^1.12.8"

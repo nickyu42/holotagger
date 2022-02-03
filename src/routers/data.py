@@ -7,7 +7,7 @@ from starlette.responses import FileResponse
 
 from src import schemas
 from src.db import get_songs, Artist
-from src.dependencies import get_db, artists_lookup, artists
+from src.dependencies import get_db, artist_lookup, artist_names, yt_lookup
 from src.metadata import get_metadata
 from src.schemas import MetadataRequest, SongMetadata
 from src.settings import COVER_DIR
@@ -50,6 +50,6 @@ async def search_artist(name: str, db: Session = Depends(get_db)):
 
 @router.post('/metadata', response_model=SongMetadata)
 def metadata(req: MetadataRequest):
-    """Guess info about song from given youtube video id"""
-    meta = get_metadata(req.video_id, artists_lookup, artists)
+    """Guess info about song from given Youtube video id"""
+    meta = get_metadata(req.video_id, artist_names, artist_lookup, yt_lookup)
     return meta.dict()

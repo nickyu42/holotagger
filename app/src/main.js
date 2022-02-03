@@ -1,13 +1,50 @@
-'use strict';
-
 import {BASE_URL, downloadURI, get, post} from "./helpers";
 
 let lastYtThumbnail = null;
 let isBusy = false;
 
 function populateForm(json) {
+    const mostLikelyArtist = json['artists'].length > 0 ? json['artists'][0][0].name : '';
+
+    const nameSuggestions = [];
+
+    for (const artistAndScore of json['artists']) {
+        const artist = artistAndScore[0];
+        nameSuggestions.push(artist.name);
+        artist['alternative_names'].forEach(n => nameSuggestions.push(n));
+    }
+
+    const suggestionsDiv = document.getElementById('artist-suggestions');
+
+    // un-hide
+    document.getElementById('artist-suggestions-div').classList.remove('visually-hidden');
+
+    // remove any existing suggestions
+    suggestionsDiv.innerHTML = ''
+
+    for (let i = 0; i < nameSuggestions.length; i++) {
+        const name = nameSuggestions[i];
+
+        const suggestionLink = document.createElement('span');
+        suggestionLink.classList.add("suggestion-link")
+        suggestionLink.innerText = name;
+
+        suggestionLink.onclick = () => {
+            document.getElementById('artist-tag').value = name;
+        };
+        suggestionsDiv.appendChild(suggestionLink);
+
+        if (i < nameSuggestions.length - 1) {
+            suggestionsDiv.append(", ")
+        }
+    }
+
+    if (nameSuggestions.length === 0) {
+        suggestionsDiv.innerText = 'Could not guess artist :(';
+    }
+
     document.getElementById('title-tag').value = json['title'];
-    document.getElementById('artist-tag').value = json['artists'].join(',');
+    document.getElementById('artist-tag').value = mostLikelyArtist;
     document.getElementById('album-tag').value = json['album'];
     document.getElementById('youtube-id').value = json['video_id'];
     lastYtThumbnail = json['thumbnail_url'];
@@ -133,7 +170,7 @@ inputForm.addEventListener('submit', (ev) => {
         return;
     }
 
-    const response = post('/metadata', {video_id: videoId})
+    post('/metadata', {video_id: videoId})
         .then(response => response.json())
         .then(json => populateForm(json))
         .catch((error) => console.error('Error:', error));

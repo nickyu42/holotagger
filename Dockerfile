@@ -14,7 +14,7 @@ COPY app /code/
 # Build bundle.js
 RUN npm run prod
 
-FROM python:3.9.5-alpine
+FROM python:3.10-alpine
 
 ENV PYTHONUNBUFFERED 1
 

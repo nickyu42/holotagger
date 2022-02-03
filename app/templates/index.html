@@ -80,7 +80,7 @@
   <form id="tag-form" class="needs-validation" novalidate>
     <div class="row">
       <div class="col-6">
-        <div class="mb-3 input-group">
+        <div class="input-group">
           <input class="form-control" id="title-tag" placeholder="Title" aria-label="Title" required>
           <div class="invalid-feedback">
             Please choose a valid title.
@@ -88,14 +88,21 @@
         </div>
       </div>
 
-      <div class="col-6">
-        <div class="mb-3 input-group">
+      <div class="mb-3 col-6">
+        <div class="input-group">
           <span class="input-group-text">By</span>
           <input class="form-control" id="artist-tag" placeholder="Artists" aria-label="Artist" required>
           <div class="invalid-feedback">
             Please choose non-empty artists.
           </div>
         </div>
+      </div>
+    </div>
+
+    <div class="mb-3 row visually-hidden" id="artist-suggestions-div">
+      <div class="col-6"></div>
+      <div class="col-6">
+        Suggestions: <div class="d-inline" id="artist-suggestions"></div>
       </div>
     </div>
 
