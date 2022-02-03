@@ -1,6 +1,6 @@
 {
   "name": "holotagger",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "description": "Application for downloading covers",
   "scripts": {
     "prod": "esbuild src/main.js --bundle --minify --target=chrome58,firefox57,safari11,edge16 --outfile=static/bundle.js",
