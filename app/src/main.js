@@ -43,7 +43,6 @@ function trackStatus(request_id) {
 
     ws.addEventListener('message', function (event) {
         const jobStatus = JSON.parse(event.data);
-        console.log(jobStatus)
         const status = jobStatus['status'];
         const percentageDone = Math.round(jobStatus['percentage_done'] * 100);
         downloadButton.innerText = status.charAt(0).toUpperCase() + status.slice(1);
