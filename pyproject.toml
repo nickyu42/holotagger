@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "holotagger"
-version = "0.0.2"
+version = "0.0.3"
 description = "API for downloading and tagging Hololive karaoke covers"
 authors = ["Nick Yu <nickyu42@gmail.com>"]
 readme = "README.md"
@@ -16,22 +16,22 @@ python-slugify = "^4.0.1"
 
 # Song analysis and processing
 ffmpeg-python = "^0.2.0"
-python-Levenshtein = "^0.12.1"
-fuzzywuzzy = "^0.18.0"
+python-Levenshtein = "^0.12.2"
+thefuzz = {extras = ["speedup"], version = "^0.19.0"}
 eyed3 = "^0.9.6"
 pykakasi = "^2.2.1"
 
 # API and downloading
 google-api-python-client = "^1.12.8"
-youtube_dl = "^2021.5.16"
 fastapi = "^0.72.0"
 uvicorn = "^0.13.3"
 aiofiles = "^0.6.0"
 websockets = "^10.1"
 Jinja2 = "^2.11.3"
+yt-dlp = "^2022.2.4"
 
 [tool.poetry.dev-dependencies]
-flake8 = "^3.8.4"
+flake8 = "^4.0.1"
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]

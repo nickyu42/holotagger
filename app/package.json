@@ -4,7 +4,7 @@
   "description": "Application for downloading covers",
   "scripts": {
     "prod": "esbuild src/main.js --bundle --minify --target=chrome58,firefox57,safari11,edge16 --outfile=static/bundle.js",
-    "build": "esbuild src/main.js --bundle --watch --minify --sourcemap=inline --target=chrome58,firefox57,safari11,edge16 --outfile=static/bundle.js"
+    "dev": "esbuild src/main.js --bundle --watch --minify --sourcemap=inline --target=chrome58,firefox57,safari11,edge16 --outfile=static/bundle.js"
   },
   "author": "Nick Yu",
   "license": "ISC",

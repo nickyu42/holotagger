@@ -6,7 +6,7 @@ from pathlib import Path
 from typing import Any
 from typing import List, Optional
 
-import youtube_dl
+import yt_dlp
 from slugify import slugify
 from sqlalchemy.orm import Session
 
@@ -41,7 +41,7 @@ def init_ydl_options(output_dir: Path, song_title: str, hooks: list) -> dict:
 
 
 def download_song(urls: List[str], ydl_options: dict):
-    with youtube_dl.YoutubeDL(ydl_options) as ydl:
+    with yt_dlp.YoutubeDL(ydl_options) as ydl:
         ydl.download(urls)
 
 
@@ -85,7 +85,7 @@ def download_and_tag(storage_dir: Path, url: str, meta: SongMetadata, db_engine:
     s.close()
 
 
-def create_download_hook(job):
+def create_download_hook(job: DownloadJob):
     def download_hook(response):
         loop = asyncio.get_event_loop()
 

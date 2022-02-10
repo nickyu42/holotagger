@@ -9,7 +9,7 @@ from sqlalchemy.orm import Session
 from starlette.background import BackgroundTasks
 from starlette.requests import Request
 from starlette.responses import FileResponse
-from starlette.websockets import WebSocket
+from starlette.websockets import WebSocket, WebSocketState
 
 from src.db import Song
 from src.dependencies import get_db, jobs
@@ -52,7 +52,14 @@ def convert(req: SongMetadata, background_tasks: BackgroundTasks, request: Reque
 async def status_ws(uid: uuid.UUID, ws: WebSocket):
     await ws.accept()
 
+    closing_ws = False
+
     async def notifier(j: DownloadJob):
+        nonlocal closing_ws
+
+        if closing_ws or ws.client_state != WebSocketState.CONNECTED:
+            return
+
         await ws.send_text(j.json())
 
     job = jobs[uid]
@@ -60,7 +67,7 @@ async def status_ws(uid: uuid.UUID, ws: WebSocket):
 
     await ws.send_text(job.json())
 
-    while job.status == Status.DOWNLOADING or job.status == Status.WAITING:
+    while job.status != Status.DONE and job.status != Status.ERROR:
         # Send error on timeout
         if time.time() - job.last_update > 60:
             job.remove_observer(notifier)
@@ -72,4 +79,5 @@ async def status_ws(uid: uuid.UUID, ws: WebSocket):
 
         await asyncio.sleep(0.5)
 
+    closing_ws = True
     await ws.close()

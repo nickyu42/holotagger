@@ -12,7 +12,7 @@ import googleapiclient.discovery
 import googleapiclient.errors
 import pykakasi
 import yaml
-from fuzzywuzzy import process
+from thefuzz import process
 from pydantic import BaseModel
 
 import src.settings as settings

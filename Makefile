@@ -14,7 +14,7 @@ prod:
 
 .PHONY: dev
 dev:
-	cd app && npm run build
+	cd app && npm run dev
 
 .PHONY: install
 install:
