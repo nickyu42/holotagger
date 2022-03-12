@@ -26,7 +26,11 @@ def download(song_id: int, db: Session = Depends(get_db)):
     if song is None:
         raise HTTPException(status_code=404, detail=f'Song with song_id {song_id} not found')
 
-    return FileResponse(song.filepath, filename=song.title, media_type='audio/mp3')
+    # Append .mp3 to the filename, if we do not append a file extension
+    # and the song title would happen to have a period in it, the browser would
+    # assume that it does and replace the 'incorrect' extension with the content-type
+    # e.g. this would happen "LOVE SPACE ver. Enna Alouette" -> "LOVE SPACE ver.mp3"
+    return FileResponse(song.filepath, filename=f'{song.title}.mp3', media_type='audio/mp3')
 
 
 @router.get('/status/{uid}', response_model=DownloadJob)
