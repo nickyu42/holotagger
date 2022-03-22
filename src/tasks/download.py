@@ -40,12 +40,14 @@ def init_ydl_options(output_dir: Path, song_title: str, hooks: list) -> dict:
     }
 
 
-def download_song(urls: List[str], ydl_options: dict):
-    with yt_dlp.YoutubeDL(ydl_options) as ydl:
-        ydl.download(urls)
-
-
-def download_and_tag(storage_dir: Path, url: str, meta: SongMetadataForDownload, db_engine: Any, hooks: Optional[list] = None):
+def download_and_tag(
+    storage_dir: Path, 
+    url: str, 
+    meta: SongMetadataForDownload, 
+    db_engine: Any, 
+    job: DownloadJob,
+    hooks: Optional[list] = None,
+):
     if hooks is None:
         hooks = []
 
@@ -57,7 +59,12 @@ def download_and_tag(storage_dir: Path, url: str, meta: SongMetadataForDownload,
 
     # Step 1: Download song
     ydl_options = init_ydl_options(out_dir, stored_song_name, hooks)
-    download_song([url], ydl_options)
+    with yt_dlp.YoutubeDL(ydl_options) as ydl:
+        ydl.download([url])
+
+    # HACK: force 100 if ytd does not fire final hook
+    if job.percentage_done < 1.0:
+        job.percentage_done = 1.0
 
     # Step 2: Add metadata to song
     try:
@@ -116,7 +123,7 @@ def download_worker(req: SongMetadataForDownload, job: DownloadJob):
 
     logger.info('Worker %s starting %s', job.request_id, req.title)
     url = f'http://youtube.com/watch?v={req.video_id}'
-    download_and_tag(settings.SONGS_STORAGE, url, req, engine, [download_hook])
+    download_and_tag(settings.SONGS_STORAGE, url, req, engine, job, hooks=[download_hook])
 
 
 async def start_download(executor: Any, uid: uuid.UUID, req) -> None:

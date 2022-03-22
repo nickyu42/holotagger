@@ -80,21 +80,25 @@ function trackStatus(request_id) {
         const jobStatus = JSON.parse(event.data);
         const status = jobStatus["status"];
         const percentageDone = Math.round(jobStatus["percentage_done"] * 100);
+        progressBar.innerText = `${percentageDone}%`;
+        progressBar.style.width = `${percentageDone}%`;
         downloadButtonText.innerText =
             status.charAt(0).toUpperCase() + status.slice(1);
-        progressBar.innerText = `${percentageDone}%`;
+
+        const setJobFinished = () => {
+            formSpinner.hidden = true;
+            downloadButton.disabled = false;
+            isBusy = false;
+        }
 
         switch (status) {
             case "done":
-                formSpinner.hidden = true;
-                downloadButton.disabled = false;
                 updateSongTable();
-                isBusy = false;
+                setJobFinished();
                 break;
 
             case "downloading":
                 downloadButtonText.innerText = "Downloading video";
-                progressBar.style.width = `${percentageDone}%`;
                 break;
 
             case "converting":
@@ -102,9 +106,7 @@ function trackStatus(request_id) {
                 break;
 
             case "error":
-                formSpinner.hidden = true;
-                downloadButton.disabled = false;
-                isBusy = false;
+                setJobFinished();
                 break;
         }
     });
