@@ -1,221 +1,212 @@
 <!doctype html>
 
 <html lang="en" xmlns="http://www.w3.org/1999/html">
+
 <head>
   <meta charset="utf-8">
   <title>HoloTagger</title>
   <meta name="author" content="Nick Yu">
   <meta name="api_url" content="{{ api_url }}">
-  <meta property="og:title" content="HoloTagger"/>
-  <meta property="og:type" content="website"/>
+  <meta property="og:title" content="HoloTagger" />
+  <meta property="og:type" content="website" />
   <meta property="og:description" content="A tool for tagging and downloading Hololive covers from Youtube">
-  <meta property="og:url" content="https://holotagger.njkyu.com"/>
-  <meta property="og:image" content="{{ url_for('static', path='/logo.png') }}"/>
+  <meta property="og:url" content="https://holotagger.njkyu.com" />
+  <meta property="og:image" content="{{ url_for('static', path='/logo.png') }}" />
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta1/dist/css/bootstrap.min.css" rel="stylesheet"
-        integrity="sha384-giJF6kkoqNQ00vy+HMDP7azOuL0xtbfIcaT9wjKHr8RbDVddVHyTfAAsrekwKmP1" crossorigin="anonymous">
+    integrity="sha384-giJF6kkoqNQ00vy+HMDP7azOuL0xtbfIcaT9wjKHr8RbDVddVHyTfAAsrekwKmP1" crossorigin="anonymous">
   <link href="{{ url_for('static', path='/style.css') }}" rel="stylesheet" type="text/css">
-  <link rel="shortcut icon" href="{{ url_for('static', path='/favicon.ico') }}"/>
-  <script>
-      // TODO: remove this
-      function download(uri) {
-          var link = document.createElement("a");
-          link.href = uri;
-          document.body.appendChild(link);
-          link.click();
-          link.remove();
-      }
-  </script>
+  <link rel="shortcut icon" href="{{ url_for('static', path='/favicon.ico') }}" />
 </head>
 
 <body>
 
-<main class="container">
-  <h1 class="display-1" style="color: #27c7fe; font-family: chicago,sans-serif">HoloTagger</h1>
-  <h4 class="text-muted mb-3">Built by a degenerate, for degenerates.</h4>
+  <main class="container">
+    <h1 class="display-1" style="color: #27c7fe; font-family: chicago,sans-serif">HoloTagger</h1>
+    <h4 class="text-muted mb-3">Built by a degenerate, for degenerates.</h4>
 
-  <div class="alert alert-danger" role="alert" id="status-alert" hidden>
-    HoloTagger is currently unavailable, contact the maintainer for info.
-  </div>
-
-  <div class="row mb-3">
-    <div class="col p-2">
-      <b>What is this?</b> <br>
-      A tool for tagging and downloading Hololive covers from Youtube
+    <div class="alert alert-danger" role="alert" id="status-alert" hidden>
+      HoloTagger is currently unavailable, contact the maintainer for info.
     </div>
-  </div>
 
-  <div class="row mb-3">
-    <div class="col">
-      <b>How do I use it?</b> <br>
-      <ol>
-        <li>Paste the Youtube link of a song and press
-          <button type="button" class="btn btn-primary btn-sm" disabled>Get Metadata</button>
-        </li>
-        <li>
-          Tags will be automatically generated,
-          you can alter the tags and press
-          <button type="button" class="btn btn-primary btn-sm" disabled>Done</button>
-          when satisfied
-        </li>
-        <li>
-          Download the song from the list of links
-        </li>
-      </ol>
-    </div>
-  </div>
-
-  <h3 class="mb-3">1. Get metadata</h3>
-
-  <form id="input-form">
-    <div class="mb-3 w-50">
-      <input class="form-control" id="youtube-form-link" aria-describedby="youtube-help" aria-label="Youtube Link"
-             placeholder="Youtube Link">
-      <div id="youtube-help" class="form-text">For example: https://www.youtube.com/watch?v=pFgUluV_00s</div>
-    </div>
-    <button type="submit" class="btn btn-primary mb-3" id="get-metadata-btn">Get metadata</button>
-  </form>
-
-  <h3 class="mb-3">2. Tag the song</h3>
-
-  <form id="tag-form" class="needs-validation" novalidate>
-    <div class="row">
-      <div class="col-6">
-        <div class="input-group">
-          <input class="form-control" id="title-tag" placeholder="Title" aria-label="Title" required>
-          <div class="invalid-feedback">
-            Please choose a valid title.
-          </div>
-        </div>
-      </div>
-
-      <div class="mb-3 col-6">
-        <div class="input-group">
-          <span class="input-group-text">By</span>
-          <input class="form-control" id="artist-tag" placeholder="Artists" aria-label="Artist" required>
-          <div class="invalid-feedback">
-            Please choose non-empty artists.
-          </div>
-        </div>
+    <div class="row mb-3">
+      <div class="col p-2">
+        <b>What is this?</b> <br>
+        A tool for tagging and downloading Hololive covers from Youtube
       </div>
     </div>
 
-    <div class="mb-3 row visually-hidden" id="artist-suggestions-div">
-      <div class="col-6"></div>
-      <div class="col-6">
-        Suggestions:
-        <div class="d-inline" id="artist-suggestions"></div>
-      </div>
-    </div>
-
-    <div class="mb-3 input-group">
-      <input class="form-control" id="album-tag" placeholder="Album" aria-label="Album" required>
-      <div class="invalid-feedback">
-        Please choose a valid album name, use "Vtuber Covers" if unsure.
-      </div>
-    </div>
-
-    <div class="mb-3">
-      <input class="form-control" id="tagger-tag" placeholder="Optional: Tagger" aria-label="Name"
-             aria-describedby="tagger-help">
-      <div id="tagger-help" class="form-text">
-        Who tagged this song, won't be included in the song's metadata
-      </div>
-    </div>
-
-    <input type="image" alt="" id="cover-tag" hidden value="">
     <div class="row mb-3">
       <div class="col">
-        <div class="card d-inline-flex">
-          <div class="card-header">Cover</div>
-          <img alt=" " src="" id="cover-preview-img" class="d-block"
-               style="width: 200px; height: 200px; object-fit: contain;">
+        <b>How do I use it?</b> <br>
+        <ol>
+          <li>Paste the Youtube link of a song and press
+            <button type="button" class="btn btn-primary btn-sm" disabled>Get Metadata</button>
+          </li>
+          <li>
+            Tags will be automatically generated,
+            you can alter the tags and press
+            <button type="button" class="btn btn-primary btn-sm" disabled>Done</button>
+            when satisfied
+          </li>
+          <li>
+            Download the song from the list of links
+          </li>
+        </ol>
+      </div>
+    </div>
+
+    <h3 class="mb-3">1. Get metadata</h3>
+
+    <form id="input-form">
+      <div class="mb-3 w-50">
+        <input class="form-control" id="youtube-form-link" aria-describedby="youtube-help" aria-label="Youtube Link"
+          placeholder="Youtube Link">
+        <div id="youtube-help" class="form-text">For example: https://www.youtube.com/watch?v=pFgUluV_00s</div>
+      </div>
+      <button type="submit" class="btn btn-primary mb-3" id="get-metadata-btn">Get metadata</button>
+    </form>
+
+    <h3 class="mb-3">2. Tag the song</h3>
+
+    <form id="tag-form" class="needs-validation" novalidate>
+      <div class="row">
+        <div class="col-6">
+          <div class="input-group">
+            <input class="form-control" id="title-tag" placeholder="Title" aria-label="Title" required>
+            <div class="invalid-feedback">
+              Please choose a valid title.
+            </div>
+          </div>
+        </div>
+
+        <div class="mb-3 col-6">
+          <div class="input-group">
+            <span class="input-group-text">By</span>
+            <input class="form-control" id="artist-tag" placeholder="Artists" aria-label="Artist" required>
+            <div class="invalid-feedback">
+              Please choose non-empty artists.
+            </div>
+          </div>
         </div>
       </div>
-    </div>
 
-    <label for="youtube-id" hidden></label><input id="youtube-id" hidden value="">
-
-    <button type="submit" class="btn btn-primary mb-3" id="download-form-button">
-      <span id="download-form-button-text">Done</span>
-
-      <span class="spinner-border spinner-border-sm"
-            role="status" aria-hidden="true" id="download-form-spinner" hidden>
-      </span>
-    </button>
-    <span class="spinner-border spinner-border-sm"
-          role="status" aria-hidden="true" id="download-form-spinner" hidden>
-        </span>
-
-    <div class="progress mb-3">
-      <div id="download-progress-bar" class="progress-bar" role="progressbar"
-           aria-valuemin="0" aria-valuemax="100" style="width:0">
+      <div class="mb-3 row visually-hidden" id="artist-suggestions-div">
+        <div class="col-6"></div>
+        <div class="col-6">
+          Suggestions:
+          <div class="d-inline" id="artist-suggestions"></div>
+        </div>
       </div>
-    </div>
-  </form>
 
-  <h3 class="mb-3">3. Get link</h3>
-  <div class="overflow-scroll" style="max-height: 800px">
-    <table class="table table-sm table-hover">
-      <thead class="thead-light">
-      <tr>
-        <th scope="col">Title</th>
-        <th scope="col">Artists</th>
-        <th scope="col">Album</th>
-        <th scope="col">Link</th>
-        <th scope="col">Tagged on</th>
-        <th scope="col">Tagged by</th>
-      </tr>
-      </thead>
+      <div class="mb-3 input-group">
+        <input class="form-control" id="album-tag" placeholder="Album" aria-label="Album" required>
+        <div class="invalid-feedback">
+          Please choose a valid album name, use "Vtuber Covers" if unsure.
+        </div>
+      </div>
 
-      <tbody id="song-table">
+      <div class="mb-3">
+        <input class="form-control" id="tagger-tag" placeholder="Optional: Tagger" aria-label="Name"
+          aria-describedby="tagger-help">
+        <div id="tagger-help" class="form-text">
+          Who tagged this song, won't be included in the song's metadata
+        </div>
+      </div>
 
-      {% for song in songs %}
-        <tr>
-          <td>{{ song.title }}</td>
-          <td>
-            {% for artist in song.artists %}
+      <input type="image" alt="" id="cover-tag" hidden value="">
+      <div class="row mb-3">
+        <div class="col">
+          <div class="card d-inline-flex">
+            <div class="card-header">Cover</div>
+            <img alt=" " src="" id="cover-preview-img" class="d-block"
+              style="width: 200px; height: 200px; object-fit: contain;">
+          </div>
+        </div>
+      </div>
+
+      <label for="youtube-id" hidden></label><input id="youtube-id" hidden value="">
+
+      <button type="submit" class="btn btn-primary mb-3" id="download-form-button">
+        <span id="download-form-button-text">Done</span>
+
+        <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true" id="download-form-spinner"
+          hidden>
+        </span>
+      </button>
+      <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true" id="download-form-spinner" hidden>
+      </span>
+
+      <div class="progress mb-3">
+        <div id="download-progress-bar" class="progress-bar" role="progressbar" aria-valuemin="0" aria-valuemax="100"
+          style="width:0">
+        </div>
+      </div>
+    </form>
+
+    <h3 class="mb-3">3. Get link</h3>
+    <div class="overflow-scroll" style="max-height: 800px">
+      <table class="table table-sm table-hover">
+        <thead class="thead-light">
+          <tr>
+            <th scope="col">Title</th>
+            <th scope="col">Artists</th>
+            <th scope="col">Album</th>
+            <th scope="col">Link</th>
+            <th scope="col">Tagged on</th>
+            <th scope="col">Tagged by</th>
+          </tr>
+        </thead>
+
+        <tbody id="song-table">
+
+          {% for song in songs %}
+          <tr>
+            <td>{{ song.title }}</td>
+            <td>
+              {% for artist in song.artists %}
               {{ artist['name'] }}
               {% if not loop.last %}
-                ,
+              ,
               {% endif %}
-            {% endfor %}
-          </td>
-          <td>{{ song.album['name'] }}</td>
-          <td>
-            <button class="btn btn-primary btn-sm" onclick="download('{{ url_for('download', song_id=song.id) }}')">
-              Download
-            </button>
-          </td>
-          <td>
-          <span class="date-convert" style="visibility: hidden">
-            {{ song.created_date.replace(tzinfo=timezone.utc).timestamp() }}
-          </span>
-          </td>
-          <td>
-            {% if song.tagger is not none %}
+              {% endfor %}
+            </td>
+            <td>{{ song.album['name'] }}</td>
+            <td>
+              <button class="btn btn-primary btn-sm"
+                onclick="window.download('{{ url_for('download', song_id=song.id) }}')">
+                Download
+              </button>
+            </td>
+            <td>
+              <span class="date-convert" style="visibility: hidden">
+                {{ song.created_date.replace(tzinfo=timezone.utc).timestamp() }}
+              </span>
+            </td>
+            <td>
+              {% if song.tagger is not none %}
               {{ song.tagger.name }}
-            {% else %}
+              {% else %}
               -
-            {% endif %}
-          </td>
-        </tr>
-      {% endfor %}
+              {% endif %}
+            </td>
+          </tr>
+          {% endfor %}
 
-      </tbody>
-    </table>
-  </div>
+        </tbody>
+      </table>
+    </div>
 
-  <br>
+    <br>
 
-  <p class="text-center"><small>
-    v0.0.3 - Contact <a href="https://github.com/nickyu42">njkyu</a> for feature requests
-  </small></p>
-</main>
+    <p class="text-center"><small>
+        v0.0.3 - Contact <a href="https://github.com/nickyu42">njkyu</a> for feature requests
+      </small></p>
+  </main>
 
-<script src="{{ url_for('static', path='bundle.js') }}"></script>
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta1/dist/js/bootstrap.bundle.min.js"
-        integrity="sha384-ygbV9kiqUc6oa4msXn9868pTtWMgiQaeYH7/t7LECLbyPA2x65Kgf80OJFdroafW"
-        crossorigin="anonymous"></script>
+  <script src="{{ url_for('static', path='bundle.js') }}"></script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta1/dist/js/bootstrap.bundle.min.js"
+    integrity="sha384-ygbV9kiqUc6oa4msXn9868pTtWMgiQaeYH7/t7LECLbyPA2x65Kgf80OJFdroafW"
+    crossorigin="anonymous"></script>
 </body>
 
 </html>

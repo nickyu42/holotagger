@@ -234,6 +234,8 @@ window.addEventListener(
             ).toLocaleString();
             e.style.visibility = "visible";
         }
+
+        window.download = downloadURI;
     },
     false
 );
