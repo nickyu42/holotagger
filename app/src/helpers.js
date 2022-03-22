@@ -2,7 +2,10 @@
  * Base URL for all requests.
  * @type {URL}
  */
-export const BASE_URL = new URL(document.querySelector("meta[name='api_url']").getAttribute('content'), window.location.origin);
+export const BASE_URL = new URL(
+    document.querySelector("meta[name='api_url']").getAttribute("content"),
+    window.location.origin
+);
 
 /**
  * Helper for GET requests.
@@ -11,14 +14,14 @@ export const BASE_URL = new URL(document.querySelector("meta[name='api_url']").g
  */
 export function get(url) {
     return fetch(BASE_URL + url, {
-        method: 'GET',
-        mode: 'cors',
-        cache: 'no-cache',
+        method: "GET",
+        mode: "cors",
+        cache: "no-cache",
         headers: {
-            'Content-Type': 'application/json'
+            "Content-Type": "application/json",
         },
-        redirect: 'follow',
-        referrerPolicy: 'no-referrer',
+        redirect: "follow",
+        referrerPolicy: "no-referrer",
     });
 }
 
@@ -30,14 +33,14 @@ export function get(url) {
  */
 export function post(url, body) {
     return fetch(BASE_URL + url, {
-        method: 'POST',
-        mode: 'cors',
-        cache: 'no-cache',
+        method: "POST",
+        mode: "cors",
+        cache: "no-cache",
         headers: {
-            'Content-Type': 'application/json'
+            "Content-Type": "application/json",
         },
-        redirect: 'follow',
-        referrerPolicy: 'no-referrer',
+        redirect: "follow",
+        referrerPolicy: "no-referrer",
         body: JSON.stringify(body),
     });
 }
