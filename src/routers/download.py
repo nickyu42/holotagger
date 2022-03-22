@@ -13,7 +13,7 @@ from starlette.websockets import WebSocket, WebSocketState
 
 from src.db import Song
 from src.dependencies import get_db, jobs
-from src.schemas import DownloadJob, Status, SongMetadata
+from src.schemas import DownloadJob, SongMetadataForDownload, Status
 from src.tasks.download import start_download
 
 router = APIRouter()
@@ -43,7 +43,7 @@ async def status(uid: uuid.UUID):
 
 
 @router.post('/convert', response_model=DownloadJob, status_code=HTTPStatus.ACCEPTED)
-def convert(req: SongMetadata, background_tasks: BackgroundTasks, request: Request):
+def convert(req: SongMetadataForDownload, background_tasks: BackgroundTasks, request: Request):
     """Start download and conversion of song with given metadata in the background"""
     uid = uuid.uuid4()
     jobs[uid] = DownloadJob(request_id=uid, status=Status.WAITING, percentage_done=0.0, last_update=time.time())

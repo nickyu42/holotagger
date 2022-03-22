@@ -9,7 +9,7 @@ from sqlalchemy import create_engine, Column, Integer, Text, Table, ForeignKey, 
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship, Session
 
-from src.schemas import SongMetadata
+from src.schemas import SongMetadataForDownload
 
 Base = declarative_base()
 
@@ -91,7 +91,7 @@ def init(db_name: str) -> Any:
     return engine
 
 
-def add_song(s: Session, meta: SongMetadata, path: Path):
+def add_song(s: Session, meta: SongMetadataForDownload, path: Path):
     """
     Adds a song object to the database.
 

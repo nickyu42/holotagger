@@ -14,7 +14,7 @@ import src.settings as settings
 from src.db import add_song
 from src.dependencies import engine, jobs
 from src.metadata import add_metadata, force_mp3
-from src.schemas import DownloadJob, SongMetadata, Status
+from src.schemas import DownloadJob, SongMetadataForDownload, Status
 
 logger = logging.getLogger(__name__)
 
@@ -45,7 +45,7 @@ def download_song(urls: List[str], ydl_options: dict):
         ydl.download(urls)
 
 
-def download_and_tag(storage_dir: Path, url: str, meta: SongMetadata, db_engine: Any, hooks: Optional[list] = None):
+def download_and_tag(storage_dir: Path, url: str, meta: SongMetadataForDownload, db_engine: Any, hooks: Optional[list] = None):
     if hooks is None:
         hooks = []
 
@@ -104,7 +104,7 @@ def create_download_hook(job: DownloadJob):
     return download_hook
 
 
-def download_worker(req: SongMetadata, job: DownloadJob):
+def download_worker(req: SongMetadataForDownload, job: DownloadJob):
     """
     Synchronous CPU-bound download job.
     This should be run in a separate thread/process.

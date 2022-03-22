@@ -16,7 +16,7 @@ from thefuzz import process
 from pydantic import BaseModel
 
 import src.settings as settings
-from src.schemas import ArtistAccount, ArtistMetadata, SongMetadata
+from src.schemas import ArtistAccount, ArtistMetadata, SongMetadata, SongMetadataForDownload
 
 PREFERRED_THUMBNAIL_RES = [
     'maxres',
@@ -151,7 +151,7 @@ def get_metadata(video_id: str, artist_names: list, artist_lookup: dict,
 
 def add_metadata(
     song_file: pathlib.Path,
-    meta: SongMetadata,
+    meta: SongMetadataForDownload,
     thumbnail: Union[pathlib.Path, str],
 ):
     """
@@ -166,7 +166,7 @@ def add_metadata(
     audio = eyed3.load(song_file.resolve())
 
     audio.tag.title = meta.title
-    audio.tag.artist = ','.join(a[0] for a in meta.artists)
+    audio.tag.artist = ','.join(a for a in meta.artists)
     audio.tag.album = meta.album
     if isinstance(thumbnail, pathlib.Path):
         with thumbnail.open('rb') as f:

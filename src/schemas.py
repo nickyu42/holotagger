@@ -97,10 +97,10 @@ class ArtistMetadata(BaseModel):
     accounts: List[ArtistAccount]
 
 
-class SongMetadata(BaseModel):
+class SongMetadataBase(BaseModel):
     # Embedded metadata
     title: str
-    artists: list[tuple[ArtistMetadata, int]] | list[str]
+
     album: str
     original_artists: list[str]
 
@@ -108,3 +108,11 @@ class SongMetadata(BaseModel):
     video_id: str
     tagger: str | None
     thumbnail_url: str | None
+
+
+class SongMetadata(SongMetadataBase):
+    artists: list[tuple[ArtistMetadata, int]]
+
+
+class SongMetadataForDownload(SongMetadataBase):
+    artists: list[str]
